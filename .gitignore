@@ -1,0 +1,9 @@
+# runtime data (orders, staff, uploads) - never commit
+data/
+data-demo/
+# local dev / test files
+_dev/
+node_modules/
+*.log
+.DS_Store
+Thumbs.db

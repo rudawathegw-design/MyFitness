@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ckb" dir="rtl" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('mf.theme')||'light'}catch(e){document.documentElement.dataset.theme='light'}</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="color-scheme" content="light dark">
+  <title>MY FITNESS Café · Ranya</title>
+  <meta name="description" content="MY FITNESS Ranya — scan the QR code on your table to order healthy meals, protein shakes, coffee and pizza. Kurdish, Arabic and English.">
+  <meta property="og:title" content="MY FITNESS Café — order from your table">
+  <meta property="og:description" content="Healthy meals, protein shakes, specialty coffee and pizza — Ranya, Kurdistan Region.">
+  <meta property="og:image" content="assets/icons/icon-512.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="assets/icons/favicon-48.png">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://images.unsplash.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@700;800;900&family=Noto+Kufi+Arabic:wght@600;700;800;900&family=Noto+Sans+Arabic:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/menu.css">
+</head>
+<body class="menu grain">
+  <header class="brandbar" id="top">
+    <a class="brandbar__logo brandbar__logo--vip" href="#/" aria-label="MY FITNESS — Luxury VIP">
+      <img src="assets/brand/logo-myfitness-160.webp" alt="MY FITNESS — Luxury VIP" width="945" height="160" fetchpriority="high">
+    </a>
+    <a class="brandbar__logo brandbar__logo--ladies" href="#/" aria-label="MY FITNESS — Ladies only">
+      <img src="assets/brand/logo-ladies-160.webp" alt="MY FITNESS — Ladies only" width="998" height="160" fetchpriority="high">
+    </a>
+  </header>
+  <main id="app" class="app"><div class="boot"><div class="boot__ring"></div></div></main>
+  <div id="cartbar-root"></div>
+  <div id="layer"></div>
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+  <noscript><p style="padding:24px;text-align:center">Please enable JavaScript to view the menu and order.</p></noscript>
+  <script type="module" src="js/menu/app.js"></script>
+</body>
+</html>

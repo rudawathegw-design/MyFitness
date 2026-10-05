@@ -1,0 +1,14 @@
+{
+  "name": "myfitness-ordering",
+  "version": "1.0.0",
+  "description": "MY FITNESS (Ranya) — QR menu, end-to-end food ordering, kitchen screen, analytics and Xprinter XP-N200L printing.",
+  "type": "module",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "node server/server.js",
+    "bridge": "node server/print-bridge.js",
+    "test": "node tests/service.test.mjs"
+  },
+  "engines": { "node": ">=18" }
+}

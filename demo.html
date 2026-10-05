@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('mf.theme')||'light'}catch(e){document.documentElement.dataset.theme='light'}</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <title>MY FITNESS · Live ordering demo</title>
+  <meta name="description" content="See the MY FITNESS ordering system end to end: QR menu on the phone, kitchen screen, live tracking, printing.">
+  <link rel="icon" type="image/png" href="assets/icons/favicon-48.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@700;800;900&family=Noto+Sans+Arabic:wght@500;700&display=swap">
+  <link rel="stylesheet" href="css/base.css">
+  <style>
+    body { background: radial-gradient(1000px 600px at 90% -10%, rgba(255, 198, 41, .12), transparent 60%), radial-gradient(800px 600px at -10% 40%, rgba(229, 18, 27, .1), transparent 60%), var(--bg); }
+    .wrap { max-width: 1320px; margin: 0 auto; padding: 26px 18px 60px; position: relative; z-index: 2; }
+    .intro { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 24px; align-items: center; }
+    @media (max-width: 900px) { .intro { grid-template-columns: 1fr; } }
+    .kicker { color: var(--gold); font-weight: 800; letter-spacing: .18em; text-transform: uppercase; font-size: 12px; }
+    h1 { font-size: clamp(34px, 5vw, 58px); font-weight: 900; text-transform: uppercase; line-height: 1; margin: 10px 0 12px; }
+    h1 em { font-style: normal; background: linear-gradient(100deg, #d39a00, #ffc629 40%, #b47c00); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .lead { color: var(--text-2); font-size: 16.5px; max-width: 60ch; }
+    .steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 22px 0 18px; }
+    @media (max-width: 640px) { .steps { grid-template-columns: 1fr 1fr; } }
+    .step { padding: 14px; border-radius: 18px; background: var(--surface); box-shadow: var(--card-shadow); border: 1px solid var(--line); display: grid; gap: 6px; animation: fadeUp .6s calc(var(--d) * .1s) both; }
+    .step i { width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center; background: var(--gold-fill); color: var(--gold-ink); font-style: normal; font-weight: 900; }
+    .step b { font-size: 14.5px; }
+    .step span { color: var(--muted); font-size: 12.5px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .qrbox { justify-self: center; display: grid; justify-items: center; gap: 10px; padding: 18px; border-radius: 26px; background: var(--surface); box-shadow: var(--shadow); border: 1px solid var(--line-2); text-align: center; max-width: 320px; }
+    .qrbox .qr { width: 210px; background: #fff; padding: 10px; border-radius: 16px; border: 4px solid var(--gold); }
+    .qrbox .qr svg { width: 100%; height: auto; display: block; }
+    .qrbox b { font-size: 16px; }
+    .qrbox small { color: var(--muted); font-size: 12.5px; }
+    .stage { display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 26px; margin-top: 34px; align-items: start; }
+    @media (max-width: 1080px) { .stage { grid-template-columns: 1fr; justify-items: center; } }
+    .label { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: var(--text-2); font-weight: 800; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; }
+    .label .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: blink 1.6s infinite; }
+    .phone { position: relative; width: 390px; height: 800px; max-width: 100%; border-radius: 54px; padding: 14px; background: linear-gradient(145deg, #2a2a2e, #0c0c0d); box-shadow: 0 0 0 2px #3a3a3f, 0 40px 90px rgba(0, 0, 0, .7), inset 0 0 0 2px rgba(255, 255, 255, .06); }
+    .phone::before { content: ''; position: absolute; top: 24px; left: 50%; transform: translateX(-50%); width: 110px; height: 30px; border-radius: 20px; background: #000; z-index: 3; }
+    .phone iframe { width: 100%; height: 100%; border: 0; border-radius: 42px; background: #000; display: block; }
+    .screen { width: 100%; border-radius: 22px; overflow: hidden; background: var(--bg); border: 1px solid var(--line-2); box-shadow: 0 40px 90px rgba(0, 0, 0, .6); }
+    .screen__bar { display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; background: var(--surface-2); border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12.5px; font-weight: 700; }
+    .screen__bar i { width: 11px; height: 11px; border-radius: 50%; background: #ff5f57; } .screen__bar i:nth-child(2) { background: #febc2e; } .screen__bar i:nth-child(3) { background: #28c840; }
+    .screen__bar span { margin-left: 8px; }
+    .screen iframe { width: 100%; height: 800px; border: 0; display: block; background: var(--bg); }
+    .tabs { display: flex; gap: 6px; margin-left: auto; }
+    .tabs button { height: 26px; padding: 0 10px; border-radius: 8px; color: var(--text-2); font-size: 12px; font-weight: 700; }
+    .tabs button.is-on { background: var(--gold-fill); color: var(--gold-ink); }
+    .note { margin-top: 26px; display: flex; gap: 10px; padding: 14px 16px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); color: var(--text-2); font-size: 13.5px; }
+    .note .i { color: var(--gold); flex: none; margin-top: 2px; }
+    .feats { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 30px; }
+    .feat { padding: 16px; border-radius: 20px; background: var(--surface); box-shadow: var(--card-shadow); border: 1px solid var(--line); display: grid; gap: 6px; }
+    .feat .i { width: 26px; height: 26px; color: var(--gold); }
+    .feat b { font-size: 15px; }
+    .feat span { color: var(--muted); font-size: 13px; }
+  </style>
+</head>
+<body class="grain">
+  <header class="brandbar">
+    <a class="brandbar__logo brandbar__logo--vip" href="./" aria-label="MY FITNESS — Luxury VIP"><img src="assets/brand/logo-myfitness-160.webp" alt="MY FITNESS — Luxury VIP" width="945" height="160"></a>
+    <a class="brandbar__logo brandbar__logo--ladies" href="./" aria-label="MY FITNESS — Ladies only"><img src="assets/brand/logo-ladies-160.webp" alt="MY FITNESS — Ladies only" width="998" height="160"></a>
+  </header>
+  <main class="wrap" id="demo"></main>
+  <div class="toasts" id="toasts"></div>
+  <script type="module">
+    import { html, render, $ } from './js/core/util.js';
+    import { icon } from './js/core/icons.js';
+    import { qrSVG } from './js/core/qr.js';
+    import { createStore, siteUrl } from './js/core/store.js';
+
+    const menuUrl = siteUrl('?t=L3');
+    const store = await createStore();
+    const server = store.mode === 'server';
+    const views = [['kitchen', 'Kitchen screen'], ['orders', 'Orders'], ['dashboard', 'Dashboard'], ['analytics', 'Analytics']];
+    render($('#demo'), html`
+      <section class="intro">
+        <div>
+          <p class="kicker">MY FITNESS · Ranya · Ladies floor café</p>
+          <h1>Scan. Order. <em>Fuel up.</em></h1>
+          <p class="lead">A complete ordering system for the café: customers scan the QR code on their table, order in Kurdish, Arabic or English — now or scheduled for later — and the kitchen receives it instantly with a sound alert and a printed ticket on the Xprinter XP-N200L.</p>
+          <div class="steps">
+            ${[['Scan the QR', 'on the table — no app, no account'], ['Order', 'now or at a scheduled time'], ['Kitchen', 'alert + auto-printed ticket'], ['Track live', 'Received → Preparing → Ready']].map(([b, s], i) => html`<div class="step" style="--d:${i}"><i>${i + 1}</i><b>${b}</b><span>${s}</span></div>`)}
+          </div>
+          <div class="actions">
+            <a class="btn btn--gold btn--lg" href="./?t=L3" target="_blank" rel="noopener">${icon('smartphone')} Customer menu</a>
+            <a class="btn btn--lg" href="admin/" target="_blank" rel="noopener">${icon('lock')} Staff panel</a>
+            <button class="btn btn--lg btn--outline" id="sim">${icon('zap')} Simulate a customer order</button>
+          </div>
+        </div>
+        <div class="qrbox">
+          <div class="qr">${{ __html: qrSVG(menuUrl, { border: 1, ecl: 'Q' }) }}</div>
+          <b>Scan with your phone</b>
+          <small>${server ? 'Live: orders from your phone appear on the kitchen screen below.' : 'Opens the menu for table L3. In this online demo each device keeps its own data — run the server (start-server.bat) to connect phones and the kitchen live.'}</small>
+        </div>
+      </section>
+      <section class="stage">
+        <div><div class="label"><span class="dot"></span> Customer phone · Table L3</div><div class="phone"><iframe src="./?t=L3" title="Customer menu"></iframe></div></div>
+        <div style="width:100%"><div class="label"><span class="dot"></span> Café PC (Windows) · staff panel</div>
+          <div class="screen"><div class="screen__bar"><i></i><i></i><i></i><span>MY FITNESS · Staff</span><div class="tabs">${views.map(([v, l], i) => html`<button data-v="${v}" class="${i ? '' : 'is-on'}">${l}</button>`)}</div></div>
+          <iframe id="admin" src="admin/?demo=1#/kitchen" title="Staff panel"></iframe></div>
+        </div>
+      </section>
+      <p class="note">${icon('info')}<span>Place an order on the phone on the left and watch it land on the kitchen screen on the right (click the staff screen once to enable sound alerts). Try “Later” at checkout to schedule an order — it moves to the kitchen automatically before its time. Demo logins: <b>admin / admin123</b>, cashier / cashier123, kitchen / kitchen123.</span></p>
+      <section class="feats">
+        ${[['qr', 'QR per table', 'Print table cards for both floors — the menu opens with the table already chosen.'], ['globe', '3 languages', 'Kurdish (Sorani), Arabic and English with full right-to-left layout.'], ['calendar', 'Now or later', 'Customers schedule a time; orders reach the kitchen automatically, on time.'], ['printer', 'XP-N200L printing', 'Windows driver, silent LAN/USB print bridge, kitchen tickets and receipts.'], ['chart', 'Business analytics', 'Revenue, peak hours, best sellers, payment mix, CSV export.'], ['image', 'Easy menu editing', 'Drag & drop photos, crop, prices in IQD, options, nutrition, sold-out switch.']].map(([ic, b, s]) => html`<div class="feat">${icon(ic)}<b>${b}</b><span>${s}</span></div>`)}
+      </section>`);
+
+    document.querySelectorAll('[data-v]').forEach((b) => b.addEventListener('click', () => {
+      document.querySelectorAll('[data-v]').forEach((x) => x.classList.toggle('is-on', x === b));
+      $('#admin').contentWindow.location.hash = '#/' + b.dataset.v;
+    }));
+    $('#sim').addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      btn.classList.add('is-busy');
+      try {
+        if (!store.user) await store.login('admin', 'admin123');
+        const o = await store.call('simulateOrder');
+        const t = document.createElement('div');
+        t.className = 'toast toast--ok';
+        render(t, html`<div class="toast__ic">${icon('zap')}</div><div class="toast__body">Order #${o.no} sent<small>${o.table ? 'Table ' + o.table : 'Pickup'} · ${o.items.map((l) => l.qty + '× ' + l.name.en).join(', ')}</small></div>`);
+        $('#toasts').appendChild(t);
+        setTimeout(() => t.remove(), 3500);
+      } catch (err) { console.error(err); }
+      btn.classList.remove('is-busy');
+    });
+  </script>
+</body>
+</html>
