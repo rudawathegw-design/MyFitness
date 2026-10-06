@@ -3,10 +3,13 @@ import { html, render, $ } from '../../core/util.js';
 import { t, clock } from '../../core/i18n.js';
 import { icon } from '../../core/icons.js';
 import { sfx } from '../../core/sound.js';
-import { A } from '../ctx.js';
+import { A, setPref } from '../ctx.js';
 import { orderCard, whereText, dueLabel } from '../ui.js';
 
 let clockTimer = null;
+// card size on this screen: s (compact) · m (same as the Orders board) · l (big, for a wall screen)
+const SIZES = ['s', 'm', 'l'];
+const sizePref = () => { try { const v = localStorage.getItem('mf.kdsSize'); return SIZES.includes(v) ? v : 'm'; } catch { return 'm'; } };
 function columns() {
   const cols = ['new', 'preparing', 'ready'];
   const act = A.d.orders.filter((o) => cols.includes(o.status)).sort((a, b) => (a.times?.new || a.createdAt) - (b.times?.new || b.createdAt));
@@ -22,14 +25,26 @@ function columns() {
 export default {
   id: 'kitchen', icon: 'chef', perm: 'orders.view', refreshOn: ['orders'],
   render(el) {
-    render(el, html`<div class="kds" id="kds">
+    const size = sizePref();
+    render(el, html`<div class="kds kds--${size}" id="kds">
       <header class="kds-head">
         <div class="kds-clock tabular" id="kds-clock">${clock(Date.now())}</div>
         <div class="kds-head__info"><b>${t('kitchenTitle')}</b><small class="muted">${A.printStation ? t('printStationOn') : t('printStationOff')}</small></div>
+        <div class="seg kds-size" role="group" aria-label="${t('cardSize')}">${SIZES.map((k) => html`<button type="button" class="${size === k ? 'is-on' : ''}" data-kds-size="${k}" title="${t('cardSize')}: ${t('size_' + k)}"><span class="kds-a kds-a--${k}">A</span><span class="hide-sm">${t('size_' + k)}</span></button>`)}</div>
         <button class="btn btn--sm" id="kds-fs">${icon('maximize')} <span class="hide-sm">${document.fullscreenElement ? t('exitFullscreen') : t('fullscreen')}</span></button>
       </header>
       <div id="kds-body">${columns()}</div>
     </div>`);
+    $('.kds-size', el).addEventListener('click', (e) => {
+      const b = e.target.closest('[data-kds-size]');
+      if (!b) return;
+      const k = b.dataset.kdsSize;
+      setPref('mf.kdsSize', k);
+      const kds = $('#kds', el);
+      SIZES.forEach((x) => kds.classList.toggle('kds--' + x, x === k));
+      el.querySelectorAll('[data-kds-size]').forEach((x) => x.classList.toggle('is-on', x === b));
+      sfx('toggle');
+    });
     $('#kds-fs', el).addEventListener('click', async () => {
       sfx('tap');
       try {

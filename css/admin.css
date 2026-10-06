@@ -268,17 +268,11 @@ body.is-login { overflow: hidden; }
 .ocard--mini { padding: 10px 12px; gap: 6px; }
 .ocard--mini .ocard__no { font-size: 18px; }
 .ocard--mini .ocard__cust, .ocard--mini .ocard__money { display: none; }
-.ocard--kitchen { padding: 14px 16px; gap: 10px; }
-.ocard--kitchen .ocard__no { font-size: 30px; }
-.ocard--kitchen .ocard__where b { font-size: 16px; }
-.ocard--kitchen .ocard__items li { font-size: 17px; cursor: pointer; padding: 6px 8px; margin: 0 -8px; border-radius: 10px; transition: background .2s, opacity .2s; }
+/* kitchen cards — tap a line to tick it off */
+.ocard--kitchen .ocard__items li { cursor: pointer; padding: 3px 6px; margin: 0 -6px; border-radius: 9px; transition: background .2s, opacity .2s; }
 .ocard--kitchen .ocard__items li:hover { background: var(--surface-2); }
-.ocard--kitchen .ocard__items .q { font-size: 18px; font-weight: 900; }
-.ocard--kitchen .ocard__items small { font-size: 14px; }
-.ocard--kitchen .ocard__items em { font-size: 14px; }
 .ocard__items li.is-struck { opacity: .45; }
 .ocard__items li.is-struck .n { text-decoration: line-through; }
-.ocard--kitchen .ocard__foot .btn { min-height: 44px; font-size: 15px; }
 
 /* ---------- orders ---------- */
 .toolbar-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
@@ -367,6 +361,40 @@ body.is-login { overflow: hidden; }
 .kds-col > header .badge { height: 30px; font-size: 14px; padding: 0 14px; }
 .kds-col > header b { font-size: 22px; }
 .kds-list { display: grid; gap: 12px; }
+/* card size switch: s (compact) · m (same as the Orders board, default) · l (big, for a wall screen) */
+.kds-size button { display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; }
+.kds-a { font-family: 'Montserrat', sans-serif; font-weight: 900; line-height: 1; }
+.kds-a--s { font-size: 11px; }
+.kds-a--m { font-size: 14px; }
+.kds-a--l { font-size: 18px; }
+.kds--m .kds-list { grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); }
+.kds--s .kds-list { grid-template-columns: repeat(auto-fill, minmax(min(190px, 100%), 1fr)); gap: 8px; }
+.kds--s, .kds--m { gap: 10px; }
+.kds--s .kds-head, .kds--m .kds-head { padding: 8px 14px; }
+.kds--m .kds-clock { font-size: 24px; }
+.kds--s .kds-clock { font-size: 20px; }
+.kds--s .kds-soon, .kds--m .kds-soon { padding: 7px 12px; }
+.kds--m .kds-col > header .badge { height: 28px; font-size: 13px; padding: 0 12px; }
+.kds--m .kds-col > header b { font-size: 18px; }
+.kds--s .kds-col > header .badge { height: 25px; font-size: 12px; padding: 0 10px; }
+.kds--s .kds-col > header b { font-size: 16px; }
+.kds--s .ocard--kitchen { padding: 9px 11px; gap: 6px; border-radius: 14px; }
+.kds--s .ocard__no { font-size: 18px; }
+.kds--s .ocard__where b { font-size: 12.5px; }
+.kds--s .ocard__where small, .kds--s .ocard__cust { font-size: 11.5px; }
+.kds--s .ocard__time { font-size: 11.5px; padding: 3px 8px; }
+.kds--s .ocard__items li { font-size: 12.5px; padding: 2px 5px; margin: 0 -5px; }
+.kds--s .ocard__items small, .kds--s .ocard__items em, .kds--s .ocard__note { font-size: 11.5px; }
+.kds--s .ocard__foot .btn { min-height: 30px; font-size: 12px; }
+.kds--s .ocard__foot .btn--icon { width: 30px; }
+.kds--l .ocard--kitchen { padding: 14px 16px; gap: 10px; }
+.kds--l .ocard__no { font-size: 30px; }
+.kds--l .ocard__where b { font-size: 16px; }
+.kds--l .ocard__items li { font-size: 17px; padding: 6px 8px; margin: 0 -8px; border-radius: 10px; }
+.kds--l .ocard__items .q { font-size: 18px; font-weight: 900; }
+.kds--l .ocard__items small, .kds--l .ocard__items em { font-size: 14px; }
+.kds--l .ocard__foot .btn { min-height: 44px; font-size: 15px; }
+.kds--l .ocard__foot .btn--icon { width: 44px; }
 .kds-empty { display: grid; justify-items: center; gap: 10px; padding: 70px 20px; text-align: center; border-radius: 24px; border: 2px dashed var(--line-2); }
 .kds-empty > .i { width: 64px; height: 64px; color: var(--gold); animation: float 4s ease-in-out infinite; }
 
