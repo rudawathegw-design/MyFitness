@@ -1,0 +1,11 @@
+// Cloudflare Workers config — deployed from GitHub by Cloudflare (Workers & Pages → Import a repository).
+{
+  "name": "myfitness",
+  "main": "cloudflare/worker.js",
+  "compatibility_date": "2026-09-01",
+  "assets": { "directory": ".", "binding": "ASSETS", "run_worker_first": ["/api/*", "/uploads/*"] },
+  "durable_objects": { "bindings": [{ "name": "CAFE", "class_name": "Cafe" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Cafe"] }],
+  "vars": { "DEMO": "1", "DEMO_DAYS": "21" },
+  "observability": { "enabled": true }
+}

@@ -142,6 +142,22 @@ async function localStore() {
 }
 
 /* ======================= server mode ======================= */
+// Live channel: Server-Sent Events on the Windows server, WebSocket on Cloudflare (same message format).
+function liveSource(health, query) {
+  if (!health?.ws) return new EventSource(siteUrl('api/events?' + query));
+  const src = { onmessage: null, onopen: null, onerror: null, close() { closed = true; clearInterval(ping); ws?.close(); } };
+  let ws = null, closed = false, ping = null, delay = 1000;
+  const open = () => {
+    if (closed) return;
+    ws = new WebSocket(siteUrl('api/ws?' + query).replace(/^http/, 'ws'));
+    ws.onopen = () => { delay = 1000; src.onopen?.(); clearInterval(ping); ping = setInterval(() => { try { ws.send('ping'); } catch {} }, 25000); };
+    ws.onmessage = (m) => { if (m.data !== 'pong') src.onmessage?.({ data: m.data }); };
+    ws.onclose = () => { clearInterval(ping); if (closed) return; src.onerror?.(); setTimeout(open, delay); delay = Math.min(delay * 2, 15000); };
+  };
+  open();
+  return src;
+}
+
 function serverStore(health) {
   const ev = emitter();
   const AKEY = 'mf.auth';
@@ -174,7 +190,7 @@ function serverStore(health) {
   function connect() {
     es?.close();
     if (!auth?.token) return;
-    es = new EventSource(siteUrl('api/events?token=' + encodeURIComponent(auth.token)));
+    es = liveSource(health, 'token=' + encodeURIComponent(auth.token));
     es.onmessage = (m) => { try { ev.emit(JSON.parse(m.data)); } catch {} };
     es.onopen = () => ev.emit({ type: 'connection', online: true });
     es.onerror = () => ev.emit({ type: 'connection', online: false });
@@ -205,6 +221,8 @@ function serverStore(health) {
     },
     img: resolveImg,
     async print(bytes, target, printer) {
+      // in the cloud the printer is reached through the print bridge on the café PC
+      if (health?.print === false) return bridgePrint(printer.bridgeUrl, bytes, target, printer.bridgeKey);
       // the server PC is on the gym network, so it talks to the printer itself
       const r = await fetch(siteUrl('api/print'), {
         method: 'POST',
@@ -216,13 +234,14 @@ function serverStore(health) {
       return true;
     },
     async printerStatus(printer, query = {}) {
+      if (health?.print === false) return bridgeStatus(printer.bridgeUrl, printer.bridgeKey, query);
       const r = await fetch(siteUrl('api/printers?' + new URLSearchParams(query)), { headers: { authorization: 'Bearer ' + (auth?.token || '') }, cache: 'no-store' });
       const j = await r.json().catch(() => ({}));
       if (!j.ok) throw new Error(j.error || 'status failed');
       return j.data;
     },
     subscribeOrder(id, token, fn) {
-      const src = new EventSource(siteUrl(`api/events?order=${encodeURIComponent(id)}&t=${encodeURIComponent(token)}`));
+      const src = liveSource(health, `order=${encodeURIComponent(id)}&t=${encodeURIComponent(token)}`);
       src.onmessage = (m) => { try { const e = JSON.parse(m.data); if (e.order) fn(e.order); } catch {} };
       return () => src.close();
     },

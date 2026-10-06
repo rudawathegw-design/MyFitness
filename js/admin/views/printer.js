@@ -19,7 +19,7 @@ const field = (lbl, inner) => html`<label class="field"><span>${lbl}</span>${inn
 const sw = (key, lbl) => html`<label class="row-switch"><span>${lbl}</span><span class="switch"><input type="checkbox" data-p="${key}" ${D[key] ? raw('checked') : ''}><span></span></span></label>`;
 
 function form() {
-  const server = A.store.mode === 'server';
+  const server = A.store.mode === 'server' && A.store.health?.print !== false; // cloud: print through the bridge
   return html`
     <div class="card-box">
       <header class="box-head"><h3>${icon('printer')} ${t('printerTitle')}</h3></header>

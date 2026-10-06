@@ -12,7 +12,26 @@ The repository is a plain static site, so GitHub Pages can host the demo directl
 > GitHub Pages is free for **public** repositories. For a private repository it needs a paid GitHub plan
 > (Pro/Team). In demo mode each browser keeps its own data — perfect for showing the owner.
 
-## Stage 1b — Live cloud link through the browser (no software on any PC)
+## Stage 1b — Live cloud link on Cloudflare (recommended, free, nothing installed)
+Every phone (Wi-Fi or mobile data), the kitchen screen and the staff panel share the same live orders. Cloudflare
+builds and runs it straight from this GitHub repository — nothing is installed on any PC.
+
+1. <https://dash.cloudflare.com> → **Workers & Pages** → **Create** → **Import a repository** → connect GitHub →
+   choose **MyFitness**.
+2. Project name: **myfitness** (must match `wrangler.jsonc`). Leave the build command empty and the deploy command
+   `npx wrangler deploy` → **Deploy**. Wait ~1–2 minutes.
+3. Open the new Worker → **Settings → Variables and Secrets → Add** → type **Secret**, name `STAFF_PASSWORD`,
+   value = your password (6+ characters) → **Deploy**. It becomes the password for `admin`, `manager`, `cashier`
+   and `kitchen`.
+4. Your link: `https://myfitness.<your-subdomain>.workers.dev`
+   - Customer menu: `…/?t=L3` · Staff panel: `…/admin/` · QR codes point to this link automatically.
+
+Data (orders, staff, settings, photos) is kept permanently in a Cloudflare Durable Object (SQLite) and survives
+redeploys; staff screens update instantly over WebSockets. Every `git push` redeploys automatically.
+Printing: the cloud cannot reach the gym's printer, so the café PC runs `start-print-bridge.bat` and the Printer page
+uses the bridge.
+
+## Stage 1c — Alternative: Render
 Use this to test with real phones on mobile data: every phone, the kitchen screen and the staff panel share the
 same live orders. Everything is done in the browser — nothing is installed on your laptop.
 
