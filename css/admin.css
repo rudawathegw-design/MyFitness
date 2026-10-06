@@ -248,6 +248,23 @@ body.is-login { overflow: hidden; }
 .ocard__money .pay.is-paid { color: var(--green); }
 .ocard__foot { display: flex; align-items: center; gap: 6px; }
 .ocard__foot .grow { flex: 1; }
+/* cards always fit inside their column, however narrow it gets (long words wrap, buttons may use two lines) */
+.col__list, .kds-list, .mini-list { grid-template-columns: minmax(0, 1fr); }
+.ocard { min-width: 0; }
+.ocard__cust { flex-wrap: wrap; row-gap: 2px; }
+.ocard__cust > span, .ocard__items li > span, .ocard__note { min-width: 0; overflow-wrap: anywhere; }
+.ocard__money { flex-wrap: wrap; row-gap: 2px; }
+.ocard__foot .btn.grow { min-width: 0; white-space: normal; line-height: 1.15; text-align: center; }
+.col { container: col / inline-size; }
+@container col (max-width: 262px) {
+  .ocard { padding: 11px 12px; }
+  .ocard__head { flex-wrap: wrap; gap: 4px 8px; }
+  .ocard__no { font-size: 19px; }
+  .ocard__where { flex: 1 1 96px; }
+  .ocard__time { max-width: 100%; margin-inline-start: auto; }
+  .ocard__foot .btn.grow { padding-inline: 8px; gap: 5px; font-size: 12.5px; }
+}
+@container col (max-width: 226px) { .ocard__foot .btn.grow .i { display: none; } }
 .ocard--mini { padding: 10px 12px; gap: 6px; }
 .ocard--mini .ocard__no { font-size: 18px; }
 .ocard--mini .ocard__cust, .ocard--mini .ocard__money { display: none; }
@@ -268,27 +285,29 @@ body.is-login { overflow: hidden; }
 .filters-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .search-sm .input { padding-inline-start: 38px; min-width: 220px; }
 .search-sm > .i { inset-inline-start: 12px; width: 16px; height: 16px; }
-/* scheduled column | dividing line | the live kitchen flow (new → preparing → ready) */
-.board { display: grid; grid-template-columns: minmax(0, 1fr) 26px minmax(0, 3fr); gap: 14px 10px; align-items: start; }
+/* scheduled column | dividing line | the live kitchen flow (new → preparing → ready).
+   Sized by the space the board really has (container queries), so the sidebar and screen zoom are taken into account. */
+.orders { container: orders / inline-size; }
+.board { display: grid; grid-template-columns: minmax(0, 1fr) 22px minmax(0, 3fr); gap: 14px 8px; align-items: start; }
 .board__live { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
 .board__rule { position: relative; align-self: stretch; display: flex; justify-content: center; min-height: 160px; }
 .board__rule::before { content: ''; position: absolute; top: 0; bottom: 0; inset-inline-start: calc(50% - 1.5px); width: 3px; border-radius: 3px; background: linear-gradient(180deg, var(--violet), color-mix(in srgb, var(--blue) 70%, transparent)); }
-.board__rule > span { position: relative; z-index: 1; margin-top: 8px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); border: 2px solid var(--violet); color: var(--violet); box-shadow: 0 0 0 4px var(--bg); }
-.board__rule .i { width: 14px; height: 14px; stroke-width: 2.8; }
+.board__rule > span { position: relative; z-index: 1; margin-top: 9px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); border: 2px solid var(--violet); color: var(--violet); box-shadow: 0 0 0 4px var(--bg); }
+.board__rule .i { width: 12px; height: 12px; stroke-width: 3; }
 .board__rule .rule-v { display: none; }
-@media (max-width: 1280px) {
+@container orders (max-width: 980px) {
   .board { grid-template-columns: minmax(0, 1fr); gap: 12px; }
-  .board__rule { min-height: 26px; align-items: center; }
+  .board__rule { min-height: 22px; align-items: center; }
   .board__rule::before { top: calc(50% - 1.5px); bottom: auto; inset-inline: 0; width: auto; height: 3px; background: linear-gradient(90deg, var(--violet), color-mix(in srgb, var(--blue) 70%, transparent)); }
   [dir='rtl'] .board__rule::before { background: linear-gradient(270deg, var(--violet), color-mix(in srgb, var(--blue) 70%, transparent)); }
   .board__rule > span { margin-top: 0; }
   .board__rule .rule-h { display: none; }
   .board__rule .rule-v { display: block; }
   .col.col--scheduled { min-height: 0; }
-  .col--scheduled .col__list { grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); }
+  .col--scheduled .col__list { grid-template-columns: repeat(auto-fill, minmax(min(270px, 100%), 1fr)); }
 }
-@media (max-width: 900px) { .board__live { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 640px) { .board__live { grid-template-columns: minmax(0, 1fr); } }
+@container orders (max-width: 800px) { .board__live { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container orders (max-width: 520px) { .board__live { grid-template-columns: minmax(0, 1fr); } }
 .col { background: color-mix(in srgb, var(--surface) 55%, var(--bg)); border: 1px solid var(--line); border-radius: 20px; padding: 10px; min-height: 160px; }
 .col__head { display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 10px; }
 .col__head b { font-size: 15px; }
@@ -296,7 +315,7 @@ body.is-login { overflow: hidden; }
 .col__empty { text-align: center; color: var(--muted); padding: 22px 0; }
 .col.col--scheduled { background: color-mix(in srgb, var(--violet-soft) 70%, var(--bg)); border-color: color-mix(in srgb, var(--violet) 30%, transparent); }
 :root[data-theme='light'] .col.col--scheduled { background: #f0ecfb; }
-.cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: 12px; }
 .table-wrap { overflow-x: auto; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); }
 .tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .tbl th { position: sticky; top: 0; text-align: start; padding: 11px 12px; font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); background: var(--surface-2); font-weight: 800; white-space: nowrap; }
