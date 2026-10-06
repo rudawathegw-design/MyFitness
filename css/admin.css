@@ -349,9 +349,9 @@ body.is-login { overflow: hidden; }
 /* ---------- kitchen ---------- */
 .kds { display: grid; gap: 14px; }
 .kds:fullscreen { background: var(--bg); padding: 18px; overflow: auto; }
-.kds-head { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); }
+.kds-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 12px 16px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); }
 .kds-clock { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 30px; color: var(--gold); }
-.kds-head__info { flex: 1; display: grid; }
+.kds-head__info { flex: 1; display: grid; min-width: 150px; }
 .kds-soon { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 14px; border-radius: 16px; background: var(--violet-soft); color: var(--violet); }
 .kds-soon__lbl { font-weight: 800; font-size: 13px; }
 .kds-soon__chip { padding: 6px 12px; border-radius: 99px; background: var(--surface); color: var(--text); font-size: 13px; font-weight: 700; border: 1px solid var(--line); }
@@ -361,14 +361,25 @@ body.is-login { overflow: hidden; }
 .kds-col > header .badge { height: 30px; font-size: 14px; padding: 0 14px; }
 .kds-col > header b { font-size: 22px; }
 .kds-list { display: grid; gap: 12px; }
+/* one ticket per row; each column scrolls on its own and shows what is hidden above or below */
+.kds-col { --fade: var(--bg); min-width: 0; }
+:root[data-theme='light'] .kds-col { --fade: #efede7; }
+.kds-scroll { position: relative; }
+.kds-list { align-content: start; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; padding-bottom: 4px; }
+.kds-scroll::before, .kds-scroll::after { content: ''; position: absolute; left: 0; right: 0; z-index: 2; height: 40px; pointer-events: none; opacity: 0; transition: opacity .2s; }
+.kds-scroll::before { top: 0; background: linear-gradient(var(--fade), transparent); }
+.kds-scroll::after { bottom: 0; height: 72px; background: linear-gradient(transparent, var(--fade) 72%); }
+.kds-scroll.has-above::before, .kds-scroll.has-more::after { opacity: 1; }
+.kds-more { position: absolute; left: 50%; bottom: 10px; z-index: 3; display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 99px; transform: translateX(-50%); background: var(--text); color: var(--bg); font-size: 13px; font-weight: 800; white-space: nowrap; box-shadow: 0 8px 22px rgba(0, 0, 0, .25); }
+.kds-more .i { width: 16px; height: 16px; animation: moreBob 1.8s ease-in-out infinite; }
+@keyframes moreBob { 50% { transform: translateY(3px); } }
 /* card size switch: s (compact) · m (same as the Orders board, default) · l (big, for a wall screen) */
 .kds-size button { display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; }
 .kds-a { font-family: 'Montserrat', sans-serif; font-weight: 900; line-height: 1; }
 .kds-a--s { font-size: 11px; }
 .kds-a--m { font-size: 14px; }
 .kds-a--l { font-size: 18px; }
-.kds--m .kds-list { grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); }
-.kds--s .kds-list { grid-template-columns: repeat(auto-fill, minmax(min(190px, 100%), 1fr)); gap: 8px; }
+.kds--s .kds-list { gap: 8px; }
 .kds--s, .kds--m { gap: 10px; }
 .kds--s .kds-head, .kds--m .kds-head { padding: 8px 14px; }
 .kds--m .kds-clock { font-size: 24px; }
