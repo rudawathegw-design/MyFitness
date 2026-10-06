@@ -1,0 +1,18 @@
+# One-click cloud deploy on Render (https://render.com) — everything happens in the browser.
+# Render → New → Blueprint → pick this repository → enter a STAFF_PASSWORD → Apply.
+services:
+  - type: web
+    name: myfitness
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server/server.js
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: DEMO
+        value: "1"          # sample menu sales so the dashboard and analytics look alive
+      - key: STAFF_PASSWORD
+        sync: false         # Render asks you for it — the password for admin, manager, cashier and kitchen
+      - key: TRUST_PROXY
+        value: "1"          # Render sits in front of the server; use each customer's real IP for the spam limits

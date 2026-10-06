@@ -4,7 +4,9 @@
 // Every phone, the kitchen screen and the staff PCs then share live data, and the
 // server sends tickets straight to the Xprinter XP-N200L (LAN or USB).
 //
-// Options (environment variables):  PORT=8080  HOST=0.0.0.0  DATA_DIR=./data  DEMO=1 (sample sales + demo logins)
+// Options (environment variables):  PORT=8080  HOST=0.0.0.0  DATA_DIR=./data  DEMO=1 (sample sales)
+//   STAFF_PASSWORD=...  password for the starting staff accounts (admin, manager, cashier, kitchen) —
+//   set it whenever the server is reachable from the internet; it also hides the one-tap demo logins.
 import http from 'node:http';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
@@ -24,6 +26,8 @@ const BACKUPS = path.join(DATA, 'backups');
 const PORT = Number(process.env.PORT || 8080);
 const HOST = process.env.HOST || '0.0.0.0';
 const DEMO = process.env.DEMO === '1' || process.argv.includes('--demo');
+const STAFF_PASSWORD = process.env.STAFF_PASSWORD || '';
+const DEMO_LOGINS = DEMO && !STAFF_PASSWORD; // one-tap demo logins only for private/local demos
 const TRUST_PROXY = process.env.TRUST_PROXY === '1';
 for (const d of [DATA, UPLOADS, BACKUPS]) fs.mkdirSync(d, { recursive: true });
 
@@ -251,7 +255,7 @@ async function serveStatic(req, res, url) {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://local');
   try {
-    if (url.pathname === '/api/health') return send(res, 200, { app: 'myfitness', mode: 'server', version: VERSION, time: Date.now(), demo: DEMO, ips: lanIPs(), port: PORT });
+    if (url.pathname === '/api/health') return send(res, 200, { app: 'myfitness', mode: 'server', version: VERSION, time: Date.now(), demo: DEMO_LOGINS, ips: lanIPs(), port: PORT });
     if (url.pathname === '/api/rpc' && req.method === 'POST') return await handleRpc(req, res);
     if (url.pathname === '/api/events' && req.method === 'GET') return await handleEvents(req, res, url);
     if (url.pathname === '/api/upload' && req.method === 'POST') return await handleUpload(req, res);
@@ -281,6 +285,12 @@ async function backup() {
 /* ---------------- start ---------------- */
 async function start() {
   const fresh = await svc._ensureSeed({ demo: false });
+  if (fresh && STAFF_PASSWORD) {
+    const sys = { user: { id: 'system', username: 'system', role: 'owner' } };
+    try {
+      for (const u of await svc.listUsers(sys)) await svc.saveUser(sys, { ...u, password: STAFF_PASSWORD });
+    } catch (e) { console.error(`  STAFF_PASSWORD was not applied (${e.code || e.message}) — it needs at least 6 characters.`); }
+  }
   if (fresh && DEMO) await svc._generateDemo({ days: 70 });
   setInterval(() => svc.releaseDue().catch((e) => console.error('release', e)), 15000);
   svc.releaseDue().catch(() => {});
@@ -295,7 +305,8 @@ async function start() {
     console.log(`  Kitchen screen:         http://localhost:${PORT}/admin/#/kitchen`);
     if (lan) console.log(`  Customer menu (Wi-Fi):  ${lan}   ← use this for the table QR codes`);
     ips.slice(1).forEach((ip) => console.log(`                          http://${ip}:${PORT}/`));
-    if (fresh) console.log(`\n  First start: default logins  admin / admin123  ·  cashier / cashier123  ·  kitchen / kitchen123\n  Change them in Staff → right away.`);
+    if (fresh && STAFF_PASSWORD) console.log(`\n  First start: staff accounts admin · manager · cashier · kitchen use your STAFF_PASSWORD.`);
+    else if (fresh) console.log(`\n  First start: default logins  admin / admin123  ·  cashier / cashier123  ·  kitchen / kitchen123\n  Change them in Staff → right away.`);
     console.log(`  Data folder: ${DATA}\n${line}\n`);
     if (process.argv.includes('--open')) {
       const u = `http://localhost:${PORT}/admin/`;

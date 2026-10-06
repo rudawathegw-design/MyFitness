@@ -12,6 +12,24 @@ The repository is a plain static site, so GitHub Pages can host the demo directl
 > GitHub Pages is free for **public** repositories. For a private repository it needs a paid GitHub plan
 > (Pro/Team). In demo mode each browser keeps its own data — perfect for showing the owner.
 
+## Stage 1b — Live cloud link through the browser (no software on any PC)
+Use this to test with real phones on mobile data: every phone, the kitchen screen and the staff panel share the
+same live orders. Everything is done in the browser — nothing is installed on your laptop.
+
+1. Open <https://render.com> → **Get started** → sign up with your **GitHub** account.
+2. Render dashboard → **New → Blueprint** → choose the **MyFitness** repository (allow Render to read it).
+3. Render reads `render.yaml` and asks for **STAFF_PASSWORD** → type a password (6+ characters). It becomes the
+   password for the staff accounts `admin`, `manager`, `cashier` and `kitchen`.
+4. Press **Apply** and wait ~2–3 minutes → you get a link like `https://myfitness-xxxx.onrender.com`.
+   - Customer menu: `https://myfitness-xxxx.onrender.com/?t=L3`
+   - Staff panel: `https://myfitness-xxxx.onrender.com/admin/`
+   - Tables & QR: the QR codes automatically point to the onrender.com link.
+
+Free plan limits: the service **sleeps after ~15 minutes without visitors** (the next visit takes up to a minute to
+wake up), and its storage is temporary — orders and uploaded photos are reset when it sleeps, restarts or redeploys
+(sample data comes back automatically). Perfect for testing and the owner demo; for the real café use Stage 2 or a
+paid plan with a persistent disk.
+
 ## Stage 2 — The real café (Windows PC in the gym)
 1. Install **Node.js LTS** on the café PC and copy (or `git clone`) this folder to it.
 2. Double-click **`start-server.bat`** (put a shortcut in the Windows *Startup* folder so it starts with the PC).
@@ -52,7 +70,8 @@ local print bridge (`start-print-bridge.bat`) on the café PC.
 | `PORT` | `8080` | Web port |
 | `HOST` | `0.0.0.0` | Listen address |
 | `DATA_DIR` | `./data` | Where orders, staff, settings and photos are stored |
-| `DEMO=1` / `--demo` | off | Sample sales + demo login buttons |
+| `DEMO=1` / `--demo` | off | Sample sales (+ one-tap demo logins when no `STAFF_PASSWORD` is set) |
+| `STAFF_PASSWORD` | – | Password for the starting staff accounts; set it whenever the server is public |
 | `TRUST_PROXY=1` | off | Read client IPs from `X-Forwarded-For` (behind a proxy) |
 
 Print bridge: `BRIDGE_PORT` (9123), `BRIDGE_HOST` (127.0.0.1), `BRIDGE_KEY` (optional shared secret — enter the same

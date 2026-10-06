@@ -68,6 +68,9 @@ In demo mode the app fills itself with ~70 days of realistic sample sales so the
 4. Customers connect to the gym Wi-Fi and scan. Orders appear live on every staff screen.
 
 `start-demo.bat` starts the same server with sample sales and demo logins (kept in `data-demo/`).
+
+**Cloud link without installing anything:** deploy the same server to Render straight from this GitHub repo
+(`render.yaml` is included) — see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#stage-1b--live-cloud-link-through-the-browser-no-software-on-any-pc).
 Data lives in `data/` (JSON files + uploaded photos) with automatic daily backups in `data/backups/`.
 
 > Give the café PC a fixed IP address in your router so the QR codes never change.
