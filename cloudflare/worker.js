@@ -19,7 +19,11 @@ export default {
   async fetch(req, env) {
     const { pathname } = new URL(req.url);
     if (pathname.startsWith('/api/') || pathname.startsWith('/uploads/')) {
-      return env.CAFE.get(env.CAFE.idFromName('myfitness')).fetch(req);
+      try {
+        return await env.CAFE.get(env.CAFE.idFromName('myfitness')).fetch(req);
+      } catch (e) {
+        return Response.json({ ok: false, error: 'worker_error', detail: String(e?.stack || e).slice(0, 800) }, { status: 500 });
+      }
     }
     return env.ASSETS.fetch(req);
   },

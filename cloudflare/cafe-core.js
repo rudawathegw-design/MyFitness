@@ -169,7 +169,11 @@ export class CafeCore {
 
   /* ---------- HTTP ---------- */
   async fetch(req) {
-    await this.ready;
+    try { await this.ready; } catch (e) {
+      console.error('init failed', e);
+      this.ready = this.init(); // try again on the next request
+      return json(500, { ok: false, error: 'init_failed', detail: String(e?.stack || e).slice(0, 800) });
+    }
     const url = new URL(req.url);
     const p = url.pathname;
     try {
