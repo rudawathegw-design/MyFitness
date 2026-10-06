@@ -764,7 +764,21 @@ export function createService({ db, emit = () => {}, now = () => Date.now(), sub
   /* ===== seeding (internal) ===== */
   svc._ensureSeed = async ({ demo = false } = {}) => {
     const meta = await read('meta');
-    if (meta?.version) return false;
+    if (meta?.version) {
+      // one-time migration: the first version opened 08:00–23:00; the café now runs 24 hours
+      if (!meta.hours24) {
+        await tx(async (w) => {
+          const m = (await w.read('meta')) || {};
+          if (m.hours24) return;
+          const s = await w.read('settings');
+          if (s?.hours?.open === '08:00' && s?.hours?.close === '23:00') { s.hours = { open: '00:00', close: '00:00' }; await w.write('settings', s); }
+          m.hours24 = true;
+          await w.write('meta', m);
+        });
+        emit({ type: 'settings.updated' });
+      }
+      return false;
+    }
     const users = [];
     for (const u of SEED_USERS) users.push(await makeUser({ ...u, defaultPw: true }));
     await tx(async (w) => {
@@ -777,7 +791,7 @@ export function createService({ db, emit = () => {}, now = () => Date.now(), sub
       await w.write('requests', []);
       await w.write('orders', []);
       await w.write('counter', { day: '', no: 0 });
-      await w.write('meta', { version: VERSION, seededAt: now(), seededDay: dayKey(now()), demo, autoRefresh: demo });
+      await w.write('meta', { version: VERSION, seededAt: now(), seededDay: dayKey(now()), demo, autoRefresh: demo, hours24: true });
     });
     if (demo) await svc._generateDemo({ days: 70 });
     return true;

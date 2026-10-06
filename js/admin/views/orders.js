@@ -21,8 +21,9 @@ async function historyOrders() {
 }
 
 function board() {
-  const cols = ['new', 'preparing', 'ready'];
-  const act = A.d.orders.filter((o) => cols.includes(o.status)).sort((a, b) => (a.times?.new || a.createdAt) - (b.times?.new || b.createdAt));
+  const cols = ['scheduled', 'new', 'preparing', 'ready'];
+  const key = (o) => (o.status === 'scheduled' ? o.scheduledFor : o.times?.new || o.createdAt);
+  const act = A.d.orders.filter((o) => cols.includes(o.status)).sort((a, b) => key(a) - key(b));
   return html`<div class="board">${cols.map((c) => {
     const list = act.filter((o) => o.status === c);
     return html`<section class="col col--${c}"><header class="col__head"><span class="badge st-${c}">${t('col_' + c)}</span><b>${list.length}</b></header>

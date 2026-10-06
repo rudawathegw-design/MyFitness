@@ -328,7 +328,7 @@ function renderMenu() {
     <section class="hero">
       <div class="hero__glow hero__glow--gold"></div><div class="hero__glow hero__glow--red"></div>
       <div class="hero__bar">
-        <span class="pill ${st.open ? 'pill--open' : 'pill--closed'}"><i></i>${st.open ? t('openNow') : t('closedNow')} <small>${fmtHM(s.hours.open)} – ${fmtHM(s.hours.close)}</small></span>
+        <span class="pill ${st.open ? 'pill--open' : 'pill--closed'}"><i></i>${st.open ? t('openNow') : t('closedNow')} <small>${s.hours.open === s.hours.close ? t('open24') : `${fmtHM(s.hours.open)} – ${fmtHM(s.hours.close)}`}</small></span>
         <div class="hero__tools">
           <button class="icon-btn" data-act="lang" aria-label="${t('language')}">${icon('globe')}<span>${LANGS.find((l) => l.code === lang())?.short}</span></button>
           <button class="icon-btn" data-act="sound" aria-label="${t('sound')}">${icon(soundEnabled() ? 'volume' : 'volumeX')}</button>

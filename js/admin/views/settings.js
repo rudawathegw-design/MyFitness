@@ -35,7 +35,8 @@ function view() {
       </section>
       <section class="card-box">
         <header class="box-head"><h3>${icon('clock')} ${t('hours')}</h3></header>
-        <div class="two"><label class="field"><span>${t('opens')}</span><input class="input" type="time" data-s="hours.open" value="${D.hours.open}"></label><label class="field"><span>${t('closes')}</span><input class="input" type="time" data-s="hours.close" value="${D.hours.close}"></label></div>
+        <label class="row-switch"><span>${t('open24')}</span><span class="switch"><input type="checkbox" id="s-24" ${D.hours.open === D.hours.close ? raw('checked') : ''}><span></span></span></label>
+        <div class="two"><label class="field"><span>${t('opens')}</span><input class="input" type="time" data-s="hours.open" value="${D.hours.open}" ${D.hours.open === D.hours.close ? raw('disabled') : ''}></label><label class="field"><span>${t('closes')}</span><input class="input" type="time" data-s="hours.close" value="${D.hours.close}" ${D.hours.open === D.hours.close ? raw('disabled') : ''}></label></div>
         ${sw('ordering.open', t('acceptOrders'))}
         ${num('ordering.prepMinutes', t('prepMin'), 1, 180)}
       </section>
@@ -90,6 +91,14 @@ export default {
     render(el, view());
     const markDirty = () => { dirty = true; $('#save-bar', el).classList.add('is-on'); };
     el.oninput = (e) => {
+      if (e.target.id === 's-24') {
+        const on = e.target.checked;
+        D.hours = on ? { open: '00:00', close: '00:00' } : { open: '08:00', close: '23:00' };
+        const o = el.querySelector('[data-s="hours.open"]'), c = el.querySelector('[data-s="hours.close"]');
+        o.value = D.hours.open; c.value = D.hours.close; o.disabled = c.disabled = on;
+        markDirty();
+        return;
+      }
       const p = e.target.dataset.s;
       if (!p) return;
       set(p, e.target.type === 'checkbox' ? e.target.checked : e.target.hasAttribute('data-num') ? Number(e.target.value) : e.target.value);

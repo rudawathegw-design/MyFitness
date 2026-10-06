@@ -4,7 +4,7 @@ import { icon } from '../../core/icons.js';
 import { chart, hbars } from '../../core/charts.js';
 import { analyze, pctChange } from '../../core/analytics.js';
 import { A, money, can, itemById } from '../ctx.js';
-import { orderCard, emptyState, whereText, call } from '../ui.js';
+import { orderCard, emptyState, whereText, call, dueLabel } from '../ui.js';
 
 const DAY = 86400000;
 function kpi({ label, value, delta, goodUp = true, spark, ic, sub }) {
@@ -39,7 +39,8 @@ export default {
     const s = A.d.settings;
     const oh = Math.floor(parseHM(s.hours.open) / 60), ch = Math.ceil(parseHM(s.hours.close) / 60);
     const hours = [];
-    for (let x = oh; x !== (ch % 24) && hours.length < 24; x = (x + 1) % 24) hours.push(x);
+    if (parseHM(s.hours.open) === parseHM(s.hours.close)) for (let x = 0; x < 24; x++) hours.push(x); // open 24 hours
+    else for (let x = oh; x !== (ch % 24) && hours.length < 24; x = (x + 1) % 24) hours.push(x);
     const counts = { new: 0, preparing: 0, ready: 0 };
     active.forEach((o) => { counts[o.status]++; });
     const showMoney = can('analytics.view');
@@ -66,7 +67,7 @@ export default {
         <div class="kpi">
           <div class="kpi__top"><span class="kpi__ic">${icon('calendar')}</span><span class="kpi__lbl">${t('kpi_sched')}</span></div>
           <div class="kpi__val">${sched.length}</div>
-          <div class="kpi__delta">${sched[0] ? `${t('dueIn', { n: Math.max(0, Math.round((sched[0].scheduledFor - now) / 60000)) })} · #${sched[0].no}` : t('noScheduled')}</div>
+          <div class="kpi__delta">${sched[0] ? `${dueLabel(sched[0].scheduledFor, now)} · #${sched[0].no}` : t('noScheduled')}</div>
         </div>
       </section>
 
@@ -92,7 +93,7 @@ export default {
           </div>
           <div class="card-box">
             <header class="box-head"><h3>${icon('calendar')} ${t('upcoming')}</h3><a class="link" href="#/orders?tab=scheduled">${t('viewAll')} ${icon('chevronRight', 'flip-rtl')}</a></header>
-            ${sched.length ? html`<ul class="sched-list">${sched.slice(0, 5).map((o) => html`<li><button class="sched-row" data-oact="open" data-id="${o.id}"><b class="tabular">${clock(o.scheduledFor)}</b><span class="grow">#${o.no} · ${whereText(o)}<small>${o.customer?.name || ''} · ${o.items.reduce((a, l) => a + l.qty, 0)} ${t('items')}</small></span><span class="badge st-scheduled badge--plain">${t('dueIn', { n: Math.max(0, Math.round((o.scheduledFor - now) / 60000)) })}</span></button></li>`)}</ul>` : emptyState('calendar', t('noScheduled'))}
+            ${sched.length ? html`<ul class="sched-list">${sched.slice(0, 5).map((o) => html`<li><button class="sched-row" data-oact="open" data-id="${o.id}"><b class="tabular">${clock(o.scheduledFor)}</b><span class="grow">#${o.no} · ${whereText(o)}<small>${o.customer?.name || ''} · ${o.items.reduce((a, l) => a + l.qty, 0)} ${t('items')}</small></span><span class="badge st-scheduled badge--plain">${dueLabel(o.scheduledFor, now)}</span></button></li>`)}</ul>` : emptyState('calendar', t('noScheduled'))}
           </div>
           <div class="card-box">
             <header class="box-head"><h3>${icon('service')} ${t('requestsTitle')}</h3><a class="link" href="#/requests">${t('viewAll')} ${icon('chevronRight', 'flip-rtl')}</a></header>

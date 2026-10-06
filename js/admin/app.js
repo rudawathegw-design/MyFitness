@@ -219,8 +219,12 @@ function renderBanners() {
   if (!A.d.settings.ordering.open) out.push(html`<div class="banner banner--red">${icon('alert')}<span>${t('orderingClosedBanner')}</span></div>`);
   if (A.store.mode === 'server' && A.user?.defaultPw) out.push(html`<a class="banner banner--red" href="#/staff">${icon('lock')}<span>${t('defaultPwWarn')}</span></a>`);
   if (A.simulate) out.push(html`<div class="banner banner--violet">${icon('zap')}<span>${t('simOn')}</span></div>`);
+  let seen = false;
+  try { seen = localStorage.getItem('mf.demoNote') === '1'; } catch {}
+  if (A.store.mode === 'local' && !seen) out.push(html`<div class="banner banner--blue">${icon('info')}<span class="grow">${t('demoBannerStaff')}</span><button class="btn btn--sm" id="b-demo-ok">${t('dismiss')}</button></div>`);
   render(el, out);
   $('#b-sound')?.addEventListener('click', () => { unlock(); setTimeout(() => { sfx('success'); renderBanners(); }, 150); askNotify(); });
+  $('#b-demo-ok')?.addEventListener('click', () => { setPref('mf.demoNote', '1'); renderBanners(); });
 }
 function askNotify() {
   try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch {}

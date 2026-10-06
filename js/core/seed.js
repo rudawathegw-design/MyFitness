@@ -221,7 +221,7 @@ export const SEED_SETTINGS = {
   currency: 'IQD',
   tzOffset: 180,
   defaultLang: 'ckb',
-  hours: { open: '08:00', close: '23:00' },
+  hours: { open: '00:00', close: '00:00' }, // same open/close time = open 24 hours
   ordering: {
     open: true,
     allowDineIn: true,
