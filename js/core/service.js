@@ -27,9 +27,9 @@ export const PERMS = {
   'settings.edit': ['owner', 'manager'],
   'analytics.view': ['owner', 'manager'],
   'requests.update': ['owner', 'manager', 'cashier', 'kitchen'],
-  'staff.manage': ['owner'],
+  'staff.manage': ['owner', 'manager'],
   'logs.view': ['owner', 'manager'],
-  'data.manage': ['owner'],
+  'data.manage': ['owner', 'manager'],
   'demo.simulate': ['owner', 'manager', 'cashier'],
 };
 export const can = (user, perm) => !!user && (PERMS[perm] || []).includes(user.role);

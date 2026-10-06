@@ -30,7 +30,8 @@ kitchen receives the order instantly with a sound alert and a printed ticket on 
 - All prices in **IQD**
 
 **Staff (Windows PC first, also tablets & phones)**
-- Login with roles: owner, manager, cashier, kitchen (each sees only what they need) + activity log
+- Login with roles: **owner and manager see and manage everything**; cashier gets orders, kitchen screen, POS and
+  service calls; kitchen gets the kitchen screen and orders · activity log of every action
 - Live orders board and full-screen **kitchen screen**: new-order alarm that repeats until accepted, desktop
   notifications, timers that turn amber/red, tap items to tick them off
 - **Scheduled orders** are released to the kitchen automatically (default 15 min before their time)

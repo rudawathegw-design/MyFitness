@@ -212,7 +212,7 @@ function showWelcome() {
   const tb = S.table ? tableById(S.table) : null;
   render(ov, html`<div class="welcome__glow"></div>
     <div class="welcome__card">
-      <img class="welcome__emblem" src="assets/icons/icon-192.png" alt="" width="96" height="96">
+      <div class="welcome__emblems"><img class="welcome__emblem" src="assets/icons/icon-192.png" alt="MY FITNESS" width="96" height="96"><img class="welcome__emblem welcome__emblem--ladies" src="assets/icons/ladies-192.png" alt="MY FITNESS Ladies" width="96" height="96"></div>
       <p class="welcome__hi"><span>بەخێربێیت</span> · <span>أهلاً بك</span> · <span>Welcome</span></p>
       <h1 class="welcome__title">MY FITNESS <em>Café</em></h1>
       ${tb ? html`<p class="welcome__table">${icon('utensils')} ${tb.name} · ${floorName(tb.floor)}</p>` : ''}
