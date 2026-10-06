@@ -106,7 +106,11 @@ export default {
       } catch {}
     });
     if (onResize) { window.removeEventListener('resize', onResize); document.removeEventListener('fullscreenchange', onResize); }
-    onResize = () => requestAnimationFrame(() => fit(el));
+    onResize = () => {
+      requestAnimationFrame(() => fit(el));
+      const label = el.querySelector('#kds-fs span');
+      if (label) label.textContent = document.fullscreenElement ? t('exitFullscreen') : t('fullscreen');
+    };
     window.addEventListener('resize', onResize);
     document.addEventListener('fullscreenchange', onResize);
     requestAnimationFrame(() => bindLists(el));

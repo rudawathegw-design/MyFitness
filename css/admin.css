@@ -347,8 +347,9 @@ body.is-login { overflow: hidden; }
 .od__tl li small { margin-inline-start: auto; color: var(--muted); }
 
 /* ---------- kitchen ---------- */
-.kds { display: grid; gap: 14px; }
-.kds:fullscreen { background: var(--bg); padding: 18px; overflow: auto; }
+/* rows keep their own height; in fullscreen the extra screen height goes to the columns, not the header */
+.kds { display: grid; gap: 14px; align-content: start; }
+.kds:fullscreen { background: var(--bg); padding: 14px 18px; overflow: auto; }
 .kds-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 12px 16px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); }
 .kds-clock { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 30px; color: var(--gold); }
 .kds-head__info { flex: 1; display: grid; min-width: 150px; }
