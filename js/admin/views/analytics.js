@@ -1,11 +1,12 @@
 // Business analytics: revenue, orders, AOV, prep time, peak hours, best sellers, mixes, insights.
-import { html, render, $, fmtNum, dayKey, csv, download, bizTs, startOfDay } from '../../core/util.js';
+import { html, render, $, fmtNum, dayKey, bizTs, startOfDay } from '../../core/util.js';
 import { t, L, clock, dateShort, weekdayName } from '../../core/i18n.js';
 import { icon } from '../../core/icons.js';
 import { chart, hbars, stackBar } from '../../core/charts.js';
 import { analyze, rangePreset, pctChange } from '../../core/analytics.js';
 import { A, money, itemById, catById } from '../ctx.js';
 import { call, emptyState } from '../ui.js';
+import { openExport } from '../export.js';
 
 const S = { key: '30', from: '', to: '', table: false };
 const DAY = 86400000;
@@ -40,16 +41,6 @@ function insights(a, prev) {
   if (a.count && a.scheduled) out.push(['calendar', t('ins_sched', { pct: Math.round((a.scheduled / a.count) * 100) })]);
   return out;
 }
-function exportOrders(orders, r) {
-  const rows = [['Order', 'Date', 'Time', 'Status', 'Type', 'Table', 'Floor', 'Customer', 'Phone', 'Items', 'Total (IQD)', 'Payment', 'Paid', 'Source', 'Scheduled']];
-  orders.filter((o) => o.createdAt >= r.from && o.createdAt < r.to).forEach((o) => rows.push([o.no, dayKey(o.createdAt), clock(o.createdAt, 'en'), o.status, o.type, o.table || '', o.floor || '', o.customer?.name || '', o.customer?.phone || '', o.items.map((l) => `${l.qty}x ${l.name?.en}`).join('; '), o.total, o.payment.method, o.payment.status, o.source, o.when === 'later' ? 'yes' : '']));
-  download(`myfitness-orders-${dayKey(r.from)}_${dayKey(r.to - 1)}.csv`, csv(rows), 'text/csv;charset=utf-8');
-}
-function exportItems(a, r) {
-  const rows = [['Item', 'Kurdish', 'Arabic', 'Category', 'Quantity', 'Revenue (IQD)']];
-  a.topItems.forEach((i) => { const it = itemById(i.id); rows.push([i.name?.en, i.name?.ckb, i.name?.ar, L(catById(i.cat)?.name, 'en'), i.qty, i.rev]); void it; });
-  download(`myfitness-item-sales-${dayKey(r.from)}_${dayKey(r.to - 1)}.csv`, csv(rows), 'text/csv;charset=utf-8');
-}
 
 export default {
   id: 'analytics', icon: 'chart', perm: 'analytics.view', refreshOn: [],
@@ -61,8 +52,7 @@ export default {
         <div class="seg seg--wrap">${['today', 'yesterday', '7', '30', 'month', 'custom'].map((k) => html`<button class="${S.key === k ? 'is-on' : ''}" data-range="${k}">${t('range_' + k)}</button>`)}</div>
         ${S.key === 'custom' ? html`<div class="custom-range"><input type="date" class="input input--sm" id="a-from" value="${S.from || dayKey(r.from)}"><span>→</span><input type="date" class="input input--sm" id="a-to" value="${S.to || dayKey(r.to - 1)}"><button class="btn btn--sm btn--gold" id="a-apply">${t('apply')}</button></div>` : ''}
         <span class="grow"></span>
-        <button class="btn btn--sm" id="a-csv">${icon('download')} ${t('exportCsv')}</button>
-        <button class="btn btn--sm" id="a-items">${icon('download')} ${t('exportItems')}</button>
+        <button class="btn btn--sm btn--gold" id="a-export">${icon('download')} ${t('exportData')}</button>
       </div>
       <div id="a-body" class="is-loading"><div class="kpis">${Array.from({ length: 6 }, () => html`<div class="kpi skel" style="height:118px"></div>`)}</div></div>
     </div>`);
@@ -72,6 +62,7 @@ export default {
       if (b.dataset.range) { S.key = b.dataset.range; this.render(el); }
       if (b.id === 'a-apply') { S.from = $('#a-from', el).value; S.to = $('#a-to', el).value; this.render(el); }
       if (b.id === 'a-table') { S.table = !S.table; this.render(el); }
+      if (b.id === 'a-export') openExport({ range: S.key, from: S.from, to: S.to });
     };
     const all = await ordersFor(r);
     if (A.view?.id !== 'analytics') return;
@@ -127,8 +118,6 @@ export default {
         </div>
       </section>`);
     $('#a-body', el).classList.remove('is-loading');
-    $('#a-csv', el).onclick = () => exportOrders(all, r);
-    $('#a-items', el).onclick = () => exportItems(a, r);
     const { mountCharts } = await import('../../core/charts.js');
     mountCharts(el);
   },

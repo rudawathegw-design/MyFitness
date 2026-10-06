@@ -17,6 +17,7 @@ export const PUBLIC_METHODS = new Set(['menu', 'placeOrder', 'trackOrder', 'call
 export const ROLES = ['owner', 'manager', 'cashier', 'kitchen'];
 export const PERMS = {
   'orders.view': ['owner', 'manager', 'cashier', 'kitchen'],
+  'dashboard.view': ['owner', 'manager', 'cashier'],
   'orders.update': ['owner', 'manager', 'cashier', 'kitchen'],
   'orders.pos': ['owner', 'manager', 'cashier'],
   'orders.cancel': ['owner', 'manager', 'cashier'],

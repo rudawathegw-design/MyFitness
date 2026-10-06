@@ -6,6 +6,7 @@ import { sfx } from '../../core/sound.js';
 import { siteUrl } from '../../core/store.js';
 import { A, can, setPref } from '../ctx.js';
 import { call, toast, confirmBox } from '../ui.js';
+import { openExport } from '../export.js';
 
 let D = null;
 let dirty = false;
@@ -71,6 +72,7 @@ function view() {
       ${owner ? html`<section class="card-box">
         <header class="box-head"><h3>${icon('database')} ${t('data')}</h3></header>
         <div class="data-btns">
+          <button type="button" class="btn btn--gold" id="s-xlsx">${icon('download')} ${t('exportData')}</button>
           <button type="button" class="btn" id="s-export">${icon('download')} ${t('exportBackup')}</button>
           <label class="btn">${icon('upload')} ${t('importBackup')}<input type="file" id="s-import" accept="application/json,.json" hidden></label>
           <button type="button" class="btn" id="s-gen">${icon('chart')} ${t('genHistory')}</button>
@@ -118,6 +120,7 @@ export default {
           break;
         case 's-cancel': sfx('tap'); this.render(el); break;
         case 's-sim1': try { const o = await call('simulateOrder'); toast(`#${o.no}`, { ic: 'zap', sub: t('simulateOne') }); } catch {} break;
+        case 's-xlsx': openExport({ range: 'month' }); break;
         case 's-export': {
           try { const data = await call('exportData'); download(`myfitness-backup-${dayKey()}.json`, JSON.stringify(data, null, 1), 'application/json'); sfx('success'); } catch {}
           break;

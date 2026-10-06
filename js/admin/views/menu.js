@@ -214,6 +214,7 @@ export function openItemEditor(item) {
     }
     if (b.id === 'it-save') {
       if (!d.name.en && !d.name.ckb && !d.name.ar) { sfx('error'); toast(t('err_nameRequired'), { type: 'err' }); m.el.querySelector('[data-f="name.en"]').focus(); return; }
+      if (!(Number(d.price) > 0) && !(await confirmBox(t('zeroPriceQ'), { ok: t('save') }))) { m.el.querySelector('[data-f="price"]')?.focus(); return; }
       b.classList.add('is-busy');
       try {
         d.img = await crop.result();

@@ -1,8 +1,9 @@
-import { html, render, $, fmtNum, fmtPhone, csv, download, dayKey, normDigits } from '../../core/util.js';
+import { html, render, $, fmtNum, fmtPhone, normDigits } from '../../core/util.js';
 import { t, L, clock, dateShort } from '../../core/i18n.js';
 import { icon } from '../../core/icons.js';
 import { rangePreset } from '../../core/analytics.js';
-import { A, money } from '../ctx.js';
+import { A, money, can } from '../ctx.js';
+import { openExport } from '../export.js';
 import { orderCard, emptyState, statusBadge, whereText, call } from '../ui.js';
 
 const st = { tab: 'active', range: 'today', status: 'all', q: '', loaded: null, list: null, page: 0 };
@@ -24,11 +25,17 @@ function board() {
   const cols = ['scheduled', 'new', 'preparing', 'ready'];
   const key = (o) => (o.status === 'scheduled' ? o.scheduledFor : o.times?.new || o.createdAt);
   const act = A.d.orders.filter((o) => cols.includes(o.status)).sort((a, b) => key(a) - key(b));
-  return html`<div class="board">${cols.map((c) => {
+  const col = (c) => {
     const list = act.filter((o) => o.status === c);
     return html`<section class="col col--${c}"><header class="col__head"><span class="badge st-${c}">${t('col_' + c)}</span><b>${list.length}</b></header>
       <div class="col__list">${list.length ? list.map((o) => orderCard(o)) : html`<p class="col__empty">—</p>`}</div></section>`;
-  })}</div>`;
+  };
+  // scheduled orders wait on their own side of the line until they are sent to the kitchen
+  return html`<div class="board">
+    ${col('scheduled')}
+    <div class="board__rule" aria-hidden="true"><span>${icon('arrowRight', 'flip-rtl rule-h')}${icon('arrowDown', 'rule-v')}</span></div>
+    <div class="board__live">${['new', 'preparing', 'ready'].map(col)}</div>
+  </div>`;
 }
 function scheduled() {
   const list = A.d.orders.filter((o) => o.status === 'scheduled').sort((a, b) => a.scheduledFor - b.scheduledFor);
@@ -60,15 +67,6 @@ function historyTable(list) {
     <div class="pager">${st.page > 0 ? html`<button class="btn btn--sm" data-page="-1">${icon('chevronLeft', 'flip-rtl')}</button>` : ''}<span class="tabular">${st.page + 1} / ${Math.max(1, Math.ceil(rows.length / PAGE))}</span>${(st.page + 1) * PAGE < rows.length ? html`<button class="btn btn--sm" data-page="1">${icon('chevronRight', 'flip-rtl')}</button>` : ''}</div>
   </div>`;
 }
-function exportCsv(list) {
-  const rows = [['Order', 'Date', 'Time', 'Status', 'Type', 'Table', 'Floor', 'Customer', 'Phone', 'Items', 'Subtotal', 'Service', 'Tax', 'Total (IQD)', 'Payment', 'Paid', 'Source', 'Scheduled for']];
-  list.filter(matches).sort((a, b) => a.createdAt - b.createdAt).forEach((o) => rows.push([
-    o.no, dayKey(o.createdAt), clock(o.createdAt, 'en'), o.status, o.type, o.table || '', o.floor || '', o.customer?.name || '', o.customer?.phone || '',
-    o.items.map((l) => `${l.qty}x ${l.name?.en || ''}${l.options?.length ? ' (' + l.options.map((x) => x.cn?.en).join(', ') + ')' : ''}`).join('; '),
-    o.subtotal, o.service, o.tax, o.total, o.payment.method, o.payment.status, o.source, o.scheduledFor ? new Date(o.scheduledFor).toISOString() : '',
-  ]));
-  download(`myfitness-orders-${st.range}-${dayKey()}.csv`, csv(rows), 'text/csv;charset=utf-8');
-}
 
 export default {
   id: 'orders', icon: 'receipt', perm: 'orders.view', refreshOn: ['orders'],
@@ -87,7 +85,7 @@ export default {
           <select class="select select--sm" id="o-range">${['today', 'yesterday', '7', '30', 'month'].map((r) => html`<option value="${r}" ${st.range === r ? 'selected' : ''}>${t('range_' + r)}</option>`)}</select>
           <select class="select select--sm" id="o-status"><option value="all">${t('all')}</option>${['completed', 'cancelled', 'new', 'preparing', 'ready', 'scheduled'].map((s) => html`<option value="${s}" ${st.status === s ? 'selected' : ''}>${t('st_' + s)}</option>`)}</select>
           <div class="input-icon search-sm">${icon('search')}<input class="input input--sm" id="o-q" value="${st.q}" placeholder="${t('searchOrders')}"></div>
-          <button class="btn btn--sm" id="o-csv">${icon('download')} ${t('exportCsv')}</button>
+          ${can('analytics.view') ? html`<button class="btn btn--sm btn--gold" id="o-export">${icon('download')} ${t('exportData')}</button>` : ''}
         </div>` : ''}
       </div>
       <div id="o-body">${st.tab === 'active' ? board() : st.tab === 'scheduled' ? scheduled() : html`<div class="skel" style="height:320px"></div>`}</div>
@@ -102,7 +100,7 @@ export default {
       $('#o-status', el).addEventListener('change', (e) => { st.status = e.target.value; st.page = 0; render($('#o-body', el), historyTable(list)); });
       let tmr;
       $('#o-q', el).addEventListener('input', (e) => { clearTimeout(tmr); tmr = setTimeout(() => { st.q = e.target.value; st.page = 0; render($('#o-body', el), historyTable(list)); }, 200); });
-      $('#o-csv', el).addEventListener('click', () => exportCsv(list));
+      $('#o-export', el)?.addEventListener('click', () => openExport({ range: st.range }));
       el.onclick = (e) => { const p = e.target.closest('[data-page]'); if (p) { st.page += Number(p.dataset.page); render($('#o-body', el), historyTable(list)); } };
     }
   },

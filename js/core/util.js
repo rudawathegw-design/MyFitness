@@ -113,7 +113,8 @@ export function b64(bytes) {
 }
 export function csv(rows) {
   const cell = (v) => {
-    const s = String(v ?? '');
+    let s = String(v ?? '');
+    if (typeof v === 'string' && /^[=+\-@\t\r]/.test(s)) s = "'" + s; // Excel must not run text as a formula
     return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   };
   return '﻿' + rows.map((r) => r.map(cell).join(',')).join('\r\n');

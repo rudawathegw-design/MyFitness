@@ -4,7 +4,8 @@ import { icon } from '../../core/icons.js';
 import { chart, hbars } from '../../core/charts.js';
 import { analyze, pctChange } from '../../core/analytics.js';
 import { A, money, can, itemById } from '../ctx.js';
-import { orderCard, emptyState, whereText, call, dueLabel } from '../ui.js';
+import { orderCard, emptyState, whereText, call, dueLabel, dueShort } from '../ui.js';
+import { openExport } from '../export.js';
 
 const DAY = 86400000;
 function kpi({ label, value, delta, goodUp = true, spark, ic, sub }) {
@@ -18,7 +19,7 @@ function kpi({ label, value, delta, goodUp = true, spark, ic, sub }) {
 }
 
 export default {
-  id: 'dashboard', icon: 'dashboard', perm: 'orders.view', refreshOn: ['orders', 'requests'],
+  id: 'dashboard', icon: 'dashboard', perm: 'dashboard.view', refreshOn: ['orders', 'requests'],
   render(el) {
     const now = Date.now();
     const d0 = startOfDay(now);
@@ -51,6 +52,7 @@ export default {
         <div class="dash__quick">
           ${can('orders.pos') ? html`<a class="btn btn--gold" href="#/pos">${icon('plus')} ${t('nav_pos')}</a>` : ''}
           <a class="btn" href="#/kitchen">${icon('chef')} ${t('nav_kitchen')}</a>
+          ${can('analytics.view') ? html`<button class="btn" id="d-export">${icon('download')} ${t('exportData')}</button>` : ''}
         </div>
       </section>
 
@@ -93,7 +95,7 @@ export default {
           </div>
           <div class="card-box">
             <header class="box-head"><h3>${icon('calendar')} ${t('upcoming')}</h3><a class="link" href="#/orders?tab=scheduled">${t('viewAll')} ${icon('chevronRight', 'flip-rtl')}</a></header>
-            ${sched.length ? html`<ul class="sched-list">${sched.slice(0, 5).map((o) => html`<li><button class="sched-row" data-oact="open" data-id="${o.id}"><b class="tabular">${clock(o.scheduledFor)}</b><span class="grow">#${o.no} · ${whereText(o)}<small>${o.customer?.name || ''} · ${o.items.reduce((a, l) => a + l.qty, 0)} ${t('items')}</small></span><span class="badge st-scheduled badge--plain">${dueLabel(o.scheduledFor, now)}</span></button></li>`)}</ul>` : emptyState('calendar', t('noScheduled'))}
+            ${sched.length ? html`<ul class="sched-list">${sched.slice(0, 5).map((o) => html`<li><button class="sched-row" data-oact="open" data-id="${o.id}"><b class="tabular">${clock(o.scheduledFor)}</b><span class="grow">#${o.no} · ${whereText(o)}<small>${o.customer?.name || ''} · ${o.items.reduce((a, l) => a + l.qty, 0)} ${t('items')}</small></span><span class="badge st-scheduled badge--plain" data-due="${o.scheduledFor}">${dueShort(o.scheduledFor, now)}</span></button></li>`)}</ul>` : emptyState('calendar', t('noScheduled'))}
           </div>
           <div class="card-box">
             <header class="box-head"><h3>${icon('service')} ${t('requestsTitle')}</h3><a class="link" href="#/requests">${t('viewAll')} ${icon('chevronRight', 'flip-rtl')}</a></header>
@@ -102,6 +104,7 @@ export default {
         </div>
       </section>
     </div>`);
+    el.querySelector('#d-export')?.addEventListener('click', () => openExport({ range: 'today' }));
     el.querySelectorAll('[data-req-done]').forEach((b) => b.addEventListener('click', () => call('resolveRequest', { id: b.dataset.reqDone }).catch(() => {})));
   },
 };

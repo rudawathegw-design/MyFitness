@@ -12,7 +12,7 @@ function columns() {
   const act = A.d.orders.filter((o) => cols.includes(o.status)).sort((a, b) => (a.times?.new || a.createdAt) - (b.times?.new || b.createdAt));
   const soon = A.d.orders.filter((o) => o.status === 'scheduled').sort((a, b) => a.scheduledFor - b.scheduledFor).slice(0, 12);
   return html`
-    ${soon.length ? html`<div class="kds-soon">${icon('calendar')}<span class="kds-soon__lbl">${t('upcoming')}</span>${soon.map((o) => html`<button class="kds-soon__chip" data-oact="open" data-id="${o.id}"><b class="tabular">${dueLabel(o.scheduledFor)}</b> · #${o.no} · ${whereText(o)}</button>`)}</div>` : ''}
+    ${soon.length ? html`<div class="kds-soon">${icon('calendar')}<span class="kds-soon__lbl">${t('upcoming')}</span>${soon.map((o) => html`<button class="kds-soon__chip" data-oact="open" data-id="${o.id}"><b class="tabular" data-due-long="${o.scheduledFor}">${dueLabel(o.scheduledFor)}</b> · #${o.no} · ${whereText(o)}</button>`)}</div>` : ''}
     ${act.length ? html`<div class="kds-cols">${cols.map((c) => {
       const list = act.filter((o) => o.status === c);
       return html`<section class="kds-col kds-col--${c}"><header><span class="badge st-${c}">${t('col_' + c)}</span><b>${list.length}</b></header><div class="kds-list">${list.map((o) => orderCard(o, { variant: 'kitchen' }))}</div></section>`;

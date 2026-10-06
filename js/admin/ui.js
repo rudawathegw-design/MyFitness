@@ -1,5 +1,5 @@
 // Staff-panel UI building blocks: toasts, modals, order cards & actions, printing.
-import { html, raw, render, $, $$, fmtNum, fmtPhone } from '../core/util.js';
+import { html, raw, render, $, $$, fmtNum, fmtPhone, dayKey } from '../core/util.js';
 import { t, L, clock, dateShort, whenLabel } from '../core/i18n.js';
 import { icon } from '../core/icons.js';
 import { sfx } from '../core/sound.js';
@@ -95,6 +95,12 @@ export function dueLabel(ts, now = Date.now()) {
   if (m <= 0) return t('dueNow');
   return m <= 90 ? t('dueIn', { n: m }) : whenLabel(ts, now);
 }
+/** Short countdown for badges next to the clock time: "due in 25 min" / "in 3h 05m" / "Tomorrow 9:00 AM". */
+export function dueShort(ts, now = Date.now()) {
+  const m = Math.round((ts - now) / 60000);
+  if (m <= 90 || dayKey(ts) !== dayKey(now)) return dueLabel(ts, now);
+  return t('dueInH', { h: Math.floor(m / 60), m: String(m % 60).padStart(2, '0') });
+}
 export function ageClass(o) {
   if (!['new', 'preparing'].includes(o.status)) return '';
   const m = elapsedMin(o);
@@ -125,7 +131,7 @@ export function orderCard(o, { variant = 'board' } = {}) {
     <header class="ocard__head">
       <button class="ocard__no" data-oact="open" data-id="${o.id}">#${String(o.no).padStart(2, '0')}</button>
       <div class="ocard__where"><b>${whereText(o)}</b><small>${o.source === 'pos' ? t('src_pos') : t('src_qr')}${o.when === 'later' ? html` · ${icon('calendar')} ${clock(o.scheduledFor)}` : ''}</small></div>
-      ${sched ? html`<span class="ocard__time is-sched">${dueLabel(o.scheduledFor)}</span>` : ['completed', 'cancelled'].includes(o.status) ? html`<span class="ocard__time">${clock(o.updatedAt)}</span>` : html`<span class="ocard__time" data-since="${startOf(o)}">${since(startOf(o))}</span>`}
+      ${sched ? html`<span class="ocard__time is-sched" data-due="${o.scheduledFor}">${dueShort(o.scheduledFor)}</span>` : ['completed', 'cancelled'].includes(o.status) ? html`<span class="ocard__time">${clock(o.updatedAt)}</span>` : html`<span class="ocard__time" data-since="${startOf(o)}">${since(startOf(o))}</span>`}
     </header>
     ${o.customer?.name || o.customer?.phone ? html`<div class="ocard__cust">${icon('user')}<span>${o.customer.name || '—'}</span>${o.customer.phone && !k ? html`<a href="tel:${o.customer.phone}" dir="ltr">${fmtPhone(o.customer.phone)}</a>` : ''}</div>` : ''}
     <ul class="ocard__items">${o.items.map((l, i) => html`<li class="${A.struck[struckKey(o, i)] ? 'is-struck' : ''}" ${k ? raw(`data-strike="${struckKey(o, i)}"`) : ''}><b class="q">${l.qty}×</b><span><span class="n">${L(l.name)}</span>${optText(l) ? html`<small>${optText(l)}</small>` : ''}${l.note ? html`<em>» ${l.note}</em>` : ''}</span></li>`)}</ul>
@@ -243,6 +249,8 @@ export function installOrderActions() {
 export function tickTimers() {
   const now = Date.now();
   $$('[data-since]').forEach((el) => { el.textContent = since(Number(el.dataset.since), now); });
+  $$('[data-due]').forEach((el) => { el.textContent = dueShort(Number(el.dataset.due), now); });
+  $$('[data-due-long]').forEach((el) => { el.textContent = dueLabel(Number(el.dataset.dueLong), now); });
   $$('.ocard[data-oid]').forEach((el) => {
     const o = A.d.orders.find((x) => x.id === el.dataset.oid);
     if (!o) return;
