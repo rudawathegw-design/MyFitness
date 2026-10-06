@@ -5,6 +5,7 @@ import { icon } from '../core/icons.js';
 import { sfx, haptic, soundEnabled, setSound, unlock } from '../core/sound.js';
 import { createStore } from '../core/store.js';
 import { scheduleSlots, isOpenNow } from '../core/service.js';
+import { scene } from './scenes.js';
 
 const app = $('#app');
 const layer = $('#layer');
@@ -131,7 +132,7 @@ async function boot() {
     return;
   }
   setTz(settings().tzOffset ?? 180);
-  setLang(detectLang(settings().defaultLang || 'ckb'), false);
+  setLang(hasSavedLang() ? detectLang() : settings().defaultLang || 'ckb', false);
   document.title = `${L(settings().brand?.cafeName)} · ${t('scanToOrder')}`;
   S.cart = loadCart().filter((l) => itemById(l.id));
 
@@ -152,11 +153,14 @@ async function boot() {
   S.store.on('menu.updated', refreshMenu);
   S.store.on('settings.updated', refreshMenu);
   S.store.on('tables.updated', refreshMenu);
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refreshMenu(); });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { refreshMenu(); syncLive(); } });
   setInterval(refreshMenu, 120000);
+  setInterval(() => { if (onMenuRoute()) paintLive(); }, 30000); // countdown on the order cards
+  setInterval(() => { if (onMenuRoute() && document.visibilityState === 'visible') syncLive(); }, 90000);
 
   window.addEventListener('hashchange', route);
   route();
+  syncLive();
   if (!hasSavedLang()) showWelcome();
 }
 
@@ -182,7 +186,7 @@ function route() {
   const page = parts[0] || 'menu';
   const prev = S.route;
   S.route = page;
-  if (S.trackUnsub && page !== 'order') { S.trackUnsub(); S.trackUnsub = null; clearInterval(S.trackTimer); }
+  if (page !== 'order') stopTracking();
   if (page === 'menu' || page === 'item' || page === 'cart') {
     if (!S.menuRendered) renderMenu();
     if (page === 'item') openItem(parts[1], q.get('edit'));
@@ -198,6 +202,8 @@ function route() {
     else location.replace('#/');
     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
   }
+  if (onMenuRoute() && prev && prev !== 'menu' && prev !== 'item' && prev !== 'cart') syncLive();
+  else watchLive();
   updateCartUI();
 }
 const go = (h) => { location.hash = h; };
@@ -213,7 +219,7 @@ function showWelcome() {
   render(ov, html`<div class="welcome__glow"></div>
     <div class="welcome__card">
       <div class="welcome__emblems"><img class="welcome__emblem" src="assets/icons/icon-192.png" alt="MY FITNESS" width="96" height="96"><img class="welcome__emblem welcome__emblem--ladies" src="assets/icons/ladies-192.png" alt="MY FITNESS Ladies" width="96" height="96"></div>
-      <p class="welcome__hi"><span>بەخێربێیت</span> · <span>أهلاً بك</span> · <span>Welcome</span></p>
+      <p class="welcome__hi"><span>بەخێربێیت</span> · <span>Welcome</span> · <span>أهلاً بك</span></p>
       <h1 class="welcome__title">MY FITNESS <em>Café</em></h1>
       ${tb ? html`<p class="welcome__table">${icon('utensils')} ${tb.name} · ${floorName(tb.floor)}</p>` : ''}
       <div class="welcome__langs">${LANGS.map((l, i) => html`<button class="welcome__lang" data-lang="${l.code}" style="--d:${i}"><b>${l.label}</b><span>${l.code === 'ckb' ? 'Kurdî · Sorani' : l.code === 'ar' ? 'Arabic' : 'English'}</span>${icon('arrowRight')}</button>`)}</div>
@@ -256,10 +262,6 @@ function heroImgs() {
   const f = S.menu.items.filter((i) => i.featured && i.img).slice(0, 3);
   const extra = S.menu.items.filter((i) => i.img && !f.includes(i));
   return [...f, ...extra].slice(0, 3);
-}
-function activeOrder() {
-  const o = myOrders()[0];
-  return o && Date.now() - o.at < 5 * 3600e3 ? o : null;
 }
 function filteredItems(catId) {
   const qv = S.search.trim().toLowerCase();
@@ -321,10 +323,10 @@ function renderMenu() {
   const s = settings();
   const st = statusInfo();
   const tb = S.table ? tableById(S.table) : null;
-  const ao = activeOrder();
   const feats = S.menu.items.filter((i) => i.featured);
   const prep = s.ordering?.prepMinutes || 15;
   render(app, html`<div class="page page--menu">
+    <div id="live-orders" class="live-orders" aria-live="polite"></div>
     <section class="hero">
       <div class="hero__glow hero__glow--gold"></div><div class="hero__glow hero__glow--red"></div>
       <div class="hero__bar">
@@ -343,7 +345,6 @@ function renderMenu() {
         <span class="pill">${icon('clock')}${t('readyIn', { n: prep })}</span>
       </div>
       <div class="hero__floats" aria-hidden="true">${heroImgs().map((it, i) => html`<div class="hero__float f${i}"><img src="${img(it.img, 260)}" alt="" decoding="async"></div>`)}</div>
-      ${ao ? html`<a class="active-order" href="#/order/${ao.id}?k=${ao.token}"><span class="active-order__pulse"></span><span class="grow"><b>${t('orderNo')} #${ao.no}</b><small>${t('track')}</small></span>${icon('arrowRight')}</a>` : ''}
       ${!st.open ? html`<div class="notice">${icon('info')}<span>${st.canSchedule ? t('closedSchedule') : t('orderingPaused')}</span></div>` : ''}
     </section>
 
@@ -375,6 +376,7 @@ function renderMenu() {
     </footer>
   </div>`);
   S.menuRendered = true;
+  paintLive();
   bindMenu();
 }
 function renderSections() {
@@ -878,40 +880,145 @@ async function placeOrder(btn) {
   }
 }
 
-/* ---------------- tracking ---------------- */
+/* ---------------- order status (tracker + menu cards) ---------------- */
 const STEPS = ['scheduled', 'new', 'preparing', 'ready', 'completed'];
-function statusArt(st) {
-  const art = {
-    scheduled: html`<div class="art art--sched">${icon('calendar')}<span class="art__tick"></span></div>`,
-    new: html`<div class="art art--new">${icon('receipt')}</div>`,
-    preparing: html`<div class="art art--prep"><div class="steam"><i></i><i></i><i></i></div>${icon('bowl')}</div>`,
-    ready: html`<div class="art art--ready">${icon('bell')}</div>`,
-    completed: html`<div class="art art--done"><svg viewBox="0 0 52 52" class="check-anim"><circle cx="26" cy="26" r="24"/><path d="M15 27l7 7 15-16"/></svg></div>`,
-    cancelled: html`<div class="art art--cancel">${icon('xCircle')}</div>`,
-  };
-  return art[st] || art.new;
+const ACTIVE = ['scheduled', 'new', 'preparing', 'ready'];
+const STEP_ICON = { scheduled: 'calendar', new: 'receipt', preparing: 'chef', ready: 'bell', completed: 'checkCircle', cancelled: 'xCircle' };
+const pad2 = (n) => String(n).padStart(2, '0');
+// drinks-only orders get the "pouring" scene instead of the pan
+const isDrinkOrder = (o) => o.items?.length > 0 && o.items.every((l) => ['coffee', 'shake', 'water'].includes(catById(l.cat)?.icon));
+function sceneKind(o) {
+  if (o.status === 'preparing') return isDrinkOrder(o) ? 'pour' : 'pan';
+  return { scheduled: 'clock', new: 'printer', ready: 'cloche', completed: 'done', cancelled: 'cancel' }[o.status] || 'printer';
 }
-function trackingHTML(o, isNew) {
+const headline = (o) => t(o.status === 'preparing' && isDrinkOrder(o) ? 'hl_preparing_drink' : 'hl_' + o.status);
+const statusDesc = (o) => (o.status === 'ready' ? t(o.type === 'dinein' ? 'sd_ready_dinein' : 'sd_ready_pickup') : o.status === 'scheduled' ? t('sd_scheduled', { time: clock(o.scheduledFor) }) : t('sd_' + o.status));
+const etaOf = (o) => (o.times?.new || o.releasedAt || o.createdAt) + (o.prepMinutes || 15) * 60000;
+function etaText(o) {
+  if (o.status === 'scheduled') return t('scheduledFor', { when: whenLabel(o.scheduledFor) });
+  if (o.status === 'new' || o.status === 'preparing') {
+    const m = Math.ceil((etaOf(o) - Date.now()) / 60000);
+    return m > 0 ? `${t('minLeft', { n: m })} · ${clock(etaOf(o))}` : t('almostReady');
+  }
+  return statusDesc(o);
+}
+function progressOf(o) {
+  if (o.status === 'scheduled') return 8;
+  if (o.status === 'new') return 24;
+  if (o.status === 'preparing') {
+    const start = o.times?.preparing || o.times?.new || o.createdAt;
+    return Math.round(42 + 40 * clamp((Date.now() - start) / ((o.prepMinutes || 15) * 60000), 0, 1));
+  }
+  return o.status === 'ready' ? 92 : 100;
+}
+// live events carry the full order in demo mode and the public order on the server
+const mergeOrder = (prev, o) => (o.token ? { ...prev, ...pickPublic(o) } : { ...prev, ...o });
+function notifyStatus(prev, o) {
+  if (o.status === prev.status) return;
+  if (o.status === 'ready') { sfx('ready'); haptic([60, 80, 60, 80, 120]); toast(`${t('orderNo')} #${pad2(o.no)} · ${t('st_ready')}`, { sub: statusDesc(o), ic: 'bell', ms: 6000 }); }
+  else if (o.status === 'preparing' || (o.status === 'new' && prev.status === 'scheduled')) sfx('soft');
+}
+
+/* ---------------- live order cards on the menu ---------------- */
+const LIVE = new Map(); // order id -> { ref, order, unsub }
+const KEEP_DONE = 15 * 60000; // finished orders stay on the menu (small) for 15 minutes
+const onMenuRoute = () => S.route === 'menu' || S.route === 'item' || S.route === 'cart';
+const showLive = (o) => ACTIVE.includes(o.status) || Date.now() - (o.updatedAt || o.createdAt) < KEEP_DONE;
+async function syncLive() {
+  if (!S.store || !S.menu) return;
+  const refs = myOrders().filter((x) => Date.now() - x.at < 8 * 3600e3).slice(0, 4);
+  const keep = new Set(refs.map((r) => r.id));
+  for (const [id, v] of LIVE) if (!keep.has(id)) { v.unsub?.(); LIVE.delete(id); }
+  await Promise.all(refs.map(async (ref) => {
+    try {
+      const order = await S.store.call('trackOrder', { id: ref.id, token: ref.token });
+      const v = LIVE.get(ref.id) || { ref, unsub: null };
+      if (v.order && onMenuRoute()) notifyStatus(v.order, order);
+      v.order = order;
+      LIVE.set(ref.id, v);
+    } catch (e) {
+      if (e.status === 404) { LIVE.get(ref.id)?.unsub?.(); LIVE.delete(ref.id); }
+    }
+  }));
+  watchLive();
+  paintLive();
+}
+function watchLive() {
+  for (const [id, v] of LIVE) {
+    const want = onMenuRoute() && v.order && ACTIVE.includes(v.order.status);
+    if (want && !v.unsub) {
+      v.unsub = S.store.subscribeOrder(id, v.ref.token, (o) => {
+        const next = mergeOrder(v.order, o);
+        if (onMenuRoute()) notifyStatus(v.order, next);
+        v.order = next;
+        paintLive();
+        if (!ACTIVE.includes(next.status)) watchLive();
+      });
+    } else if (!want && v.unsub) { v.unsub(); v.unsub = null; }
+  }
+}
+function liveCardHTML(v) {
+  const o = v.order;
+  const done = !ACTIVE.includes(o.status);
+  return html`<a class="lo st--${o.status} ${done ? 'lo--done' : ''}" data-lo="${o.id}" href="#/order/${o.id}?k=${v.ref.token}">
+    <span class="lo__scene">${scene(sceneKind(o))}</span>
+    <span class="lo__body">
+      <span class="lo__top"><b class="tabular">${t('orderNo')} #${pad2(o.no)}</b><span class="lo__badge">${t('st_' + o.status)}</span></span>
+      <span class="lo__title">${headline(o)}</span>
+      ${done ? '' : html`<span class="lo__bar"><i style="width:${progressOf(o)}%"></i></span>`}
+      <small class="lo__eta">${etaText(o)}</small>
+    </span>
+    <span class="lo__go">${icon('chevronRight', 'flip-rtl')}</span>
+  </a>`;
+}
+function paintLive() {
+  const box = $('#live-orders');
+  if (!box) return;
+  const list = [...LIVE.values()].filter((v) => v.order && showLive(v.order)).sort((a, b) => b.ref.at - a.ref.at);
+  const sig = list.map((v) => `${v.order.id}:${v.order.status}:${lang()}`).join('|');
+  if (box.dataset.sig === sig) { // same statuses: refresh countdown + bar only, so the animations keep running
+    for (const v of list) {
+      const el = box.querySelector(`[data-lo="${v.order.id}"]`);
+      const eta = el?.querySelector('.lo__eta');
+      if (eta) eta.textContent = etaText(v.order);
+      const bar = el?.querySelector('.lo__bar i');
+      if (bar) bar.style.width = progressOf(v.order) + '%';
+    }
+    return;
+  }
+  box.dataset.sig = sig;
+  render(box, list.length ? html`${list.map(liveCardHTML)}` : '');
+}
+
+/* ---------------- tracking page ---------------- */
+function stepperHTML(o) {
   const steps = STEPS.filter((s) => s !== 'scheduled' || o.when === 'later');
   const idx = steps.indexOf(o.status);
-  const eta = o.status === 'scheduled' ? o.scheduledFor : (o.times?.new || o.releasedAt || o.createdAt) + (o.prepMinutes || 15) * 60000;
-  const desc = o.status === 'ready' ? t(o.type === 'dinein' ? 'sd_ready_dinein' : 'sd_ready_pickup') : o.status === 'scheduled' ? t('sd_scheduled', { time: clock(o.scheduledFor) }) : t('sd_' + o.status);
+  return html`<ol class="track">${steps.map((s, i) => {
+    const done = i < idx || (i === idx && s === 'completed');
+    const cls = done ? 'is-done' : i === idx ? 'is-now' : i === idx + 1 ? 'is-next' : '';
+    const ic = done && s !== 'completed' ? 'check' : s === 'preparing' && isDrinkOrder(o) ? 'coffee' : STEP_ICON[s];
+    return html`<li class="${cls}"><span class="track__dot">${icon(ic)}</span><b>${t('st_' + s)}</b>${i <= idx && o.times?.[s] ? html`<small class="tabular">${clock(o.times[s])}</small>` : ''}</li>`;
+  })}</ol>`;
+}
+function trackingHTML(o, isNew, changed) {
+  const showEta = ['scheduled', 'new', 'preparing'].includes(o.status);
   return html`<div class="page page--track">
     ${isNew ? html`<div class="placed-banner"><span>${icon('checkCircle')}</span><div><b>${t('placed')}</b><small>${o.status === 'scheduled' ? t('placedSchedSub', { when: whenLabel(o.scheduledFor) }) : t('placedSub')}</small></div></div>` : ''}
-    <div class="ticket st--${o.status}">
-      <div class="ticket__top">
-        <span class="ticket__lbl">${t('orderNo')}</span>
-        <b class="ticket__no tabular">#${String(o.no).padStart(2, '0')}</b>
-        <span class="badge st-${o.status}">${t('st_' + o.status)}</span>
+    <section class="stage st--${o.status} ${changed ? 'is-changed' : ''}" aria-live="polite">
+      <div class="stage__top">
+        <span class="stage__no"><small>${t('orderNo')}</small><b class="tabular">#${pad2(o.no)}</b></span>
+        <span class="stage__live"><i></i>${t('liveUpdates')}</span>
       </div>
-      <div class="ticket__cut"><i></i><i></i></div>
-      <div class="ticket__status">
-        ${statusArt(o.status)}
-        <h2>${t('st_' + o.status)}</h2>
-        <p>${desc}</p>
-        ${['scheduled', 'new', 'preparing'].includes(o.status) ? html`<div class="eta">${icon('clock')}<span>${o.status === 'scheduled' ? t('scheduledFor', { when: whenLabel(o.scheduledFor) }) : `${t('estReady')}: ${clock(eta)}`}</span></div>` : ''}
-      </div>
-      ${o.status !== 'cancelled' ? html`<ol class="steps" style="--p:${Math.max(0, idx) / Math.max(1, steps.length - 1)}">${steps.map((s, i) => html`<li class="${i < idx ? 'is-done' : i === idx ? 'is-now' : ''}"><span class="steps__dot">${i < idx ? icon('check') : ''}</span><span class="steps__lbl">${t('st_' + s)}</span>${o.times?.[s] ? html`<small class="tabular">${clock(o.times[s])}</small>` : ''}</li>`)}</ol>` : ''}
+      <div class="stage__scene">${scene(sceneKind(o))}</div>
+      <span class="stage__badge">${icon(STEP_ICON[o.status] || 'info')}${t('st_' + o.status)}</span>
+      <h1 class="stage__title">${headline(o)}</h1>
+      <p class="stage__sub">${statusDesc(o)}</p>
+      ${showEta ? html`<p class="stage__eta">${icon('clock')}<span id="eta-text">${etaText(o)}</span></p>` : ''}
+      ${o.status !== 'cancelled' ? stepperHTML(o) : ''}
+    </section>
+    <div class="ticket">
+      <h2 class="ticket__h">${icon('receipt')}${t('yourOrder')}</h2>
       <div class="ticket__meta">
         <div>${icon(o.type === 'dinein' ? 'utensils' : 'store')}<span>${o.type === 'dinein' && o.table ? `${t('table', { t: o.table })} · ${floorName(o.floor)}` : t('pickup')}</span></div>
         ${o.customer?.name ? html`<div>${icon('user')}<span>${o.customer.name}</span></div>` : ''}
@@ -925,33 +1032,41 @@ function trackingHTML(o, isNew) {
       <button class="btn btn--gold btn--lg" data-again>${icon('refresh')} ${t('orderAgain')}</button>
       <a class="btn btn--ghost" href="#/">${icon('arrowLeft', 'flip-rtl')} ${t('backToMenu')}</a>
     </div>
-    <p class="live-dot"><i></i>${t('liveUpdates')}</p>
   </div>`;
 }
+function stopTracking() {
+  S.trackUnsub?.();
+  S.trackUnsub = null;
+  clearInterval(S.trackTimer);
+}
 async function renderTracking(id, token, isNew) {
+  stopTracking();
   if (!token) { const m = myOrders().find((x) => x.id === id); token = m?.token; }
-  render(app, html`<div class="page page--track"><div class="skel" style="height:420px;border-radius:28px"></div></div>`);
+  render(app, html`<div class="page page--track"><div class="skel" style="height:520px;border-radius:28px"></div></div>`);
   let order;
   try { order = await S.store.call('trackOrder', { id, token }); } catch { render(app, html`<div class="fatal">${icon('alert')}<h2>${t('err_generic')}</h2><a class="btn btn--gold" href="#/">${t('backToMenu')}</a></div>`); return; }
+  if (S.route !== 'order') return;
   let last = order;
-  const paint = (o, first) => {
-    render(app, trackingHTML(o, first && isNew));
+  const paint = (o, first, changed) => {
+    render(app, trackingHTML(o, first && isNew, changed));
     bindTracking(o, token);
   };
-  paint(order, true);
+  paint(order, true, false);
   if (isNew) { sfx('success'); haptic([20, 40, 20]); confetti(); history.replaceState(null, '', `#/order/${id}?k=${token}`); }
   const onChange = (o) => {
-    const pub = o.token ? { ...last, ...pickPublic(o) } : { ...last, ...o };
-    if (pub.status !== last.status) {
-      if (pub.status === 'ready') { sfx('ready'); haptic([60, 80, 60, 80, 120]); toast(t('st_ready'), { sub: t(pub.type === 'dinein' ? 'sd_ready_dinein' : 'sd_ready_pickup'), ic: 'bell', ms: 6000 }); }
-      else if (pub.status === 'preparing') sfx('soft');
-      else if (pub.status === 'new' && last.status === 'scheduled') sfx('soft');
-    }
-    if (pub.status !== last.status || pub.payment?.status !== last.payment?.status) { last = pub; paint(pub, false); }
+    const pub = mergeOrder(last, o);
+    const changed = pub.status !== last.status;
+    if (changed) notifyStatus(last, pub);
+    const repaint = changed || pub.payment?.status !== last.payment?.status;
+    last = pub;
+    if (repaint) paint(pub, false, changed);
   };
   S.trackUnsub = S.store.subscribeOrder(id, token, onChange);
-  clearInterval(S.trackTimer);
-  S.trackTimer = setInterval(async () => { try { onChange(await S.store.call('trackOrder', { id, token })); } catch {} }, 10000);
+  S.trackTimer = setInterval(async () => {
+    const eta = $('#eta-text');
+    if (eta) eta.textContent = etaText(last);
+    try { onChange(await S.store.call('trackOrder', { id, token })); } catch {}
+  }, 15000);
 }
 function pickPublic(o) { return { status: o.status, times: o.times, payment: { method: o.payment?.method, status: o.payment?.status }, releasedAt: o.releasedAt, scheduledFor: o.scheduledFor }; }
 function bindTracking(o, token) {

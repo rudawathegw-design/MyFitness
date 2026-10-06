@@ -41,9 +41,9 @@
   /* theme helpers (dark values) */
   --gold-fill: #ffc629;
   --gold-fill-2: #f2a900;
-  --red-text: var(--red-text);
-  --blue-text: var(--blue-text);
-  --violet-text: var(--violet-text);
+  --red-text: #ff6b6f;
+  --blue-text: #8db4ff;
+  --violet-text: #b9a3ff;
   --tint: rgba(255, 255, 255, .06);
   --card-bg: linear-gradient(180deg, rgba(255, 255, 255, .035), rgba(255, 255, 255, .015));
   --card-shadow: none;
@@ -144,10 +144,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .brandbar__logo--ladies img { height: calc(var(--logo-h) * 1.05); }
 .brandbar__logo--vip { animation: logoIn .7s var(--ease) both; }
 .brandbar__logo--ladies { animation: logoIn .7s .12s var(--ease) both; }
-.brandbar__logo--ladies img { animation: neon 6s 1.2s infinite; }
 @keyframes logoIn { from { opacity: 0; transform: translateY(-6px) scale(.98); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
-/* flicker like the real neon sign (brightness only — a drop-shadow would outline the image box) */
-@keyframes neon { 0%, 92%, 100% { filter: none; } 93% { filter: brightness(1.4) saturate(1.15); } 94% { filter: brightness(.8); } 95% { filter: brightness(1.3) saturate(1.1); } }
 
 /* ---------- Buttons ---------- */
 .btn {
